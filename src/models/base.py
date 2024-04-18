@@ -1,4 +1,4 @@
-import torch
+#import torch
 import numpy as np
 from abc import ABC, abstractmethod
 
@@ -23,7 +23,8 @@ class ScikitModel(ABC):
 
     def __str__(self) -> str:
         return f"{self.name}"
-    
+
+'''
 class TorchModel(torch.nn.Module, ABC):
     def __init__(self) -> None:
         super(TorchModel, self).__init__()
@@ -31,4 +32,4 @@ class TorchModel(torch.nn.Module, ABC):
     @abstractmethod
     def forward(self, x: torch.Tensor):
         raise NotImplementedError
-    
+    '''
