@@ -1,11 +1,12 @@
 from numpy import array
 from ..base import ScikitModel
-from sklearn.tree import DecisionTreeClassifier
+from sklearn.linear_model import RidgeClassifier
 
-class DecisionTree(ScikitModel):
+
+class RidgeRegClassifier(ScikitModel):
     def __init__(self, **kwargs) -> None:
-        super().__init__(name='DTC')
-        self._model = DecisionTreeClassifier(**kwargs)
+        super().__init__(name='Ridge Classifier')
+        self._model = RidgeClassifier(**kwargs)
 
     def fit(self, X, y):
         self._model.fit(X, y)
