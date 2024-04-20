@@ -3,5 +3,6 @@
     "MODEL_OUTPUT": "../models/scikit",
     "MODEL": "DecisionClassifier",
     "TEST_SIZE": 0.2,
-    "PARAMETERS": "None"
+    "PARAMETERS": "None",
+    "PLOT_EVAL": "True"
 }

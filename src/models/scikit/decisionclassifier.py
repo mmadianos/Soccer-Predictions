@@ -13,3 +13,10 @@ class DecisionClassifier(ScikitModel):
     
     def predict(self, x) -> array:
         return self._model.predict(x)
+    
+    def predict_proba(self, x):
+        return self._model.predict_proba(x)
+    
+    @property
+    def classes_(self):
+        return self._model.classes_
