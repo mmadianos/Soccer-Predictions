@@ -24,7 +24,7 @@ class Engine:
     
     @staticmethod
     def _get_model(model_name):
-        model_package = f'models.scikit.{model_name.lower()}'
+        model_package = f'models.estimators.{model_name.lower()}'
         mod = importlib.import_module(model_package)
         return getattr(mod, model_name)
 
@@ -32,16 +32,19 @@ class Engine:
     def _evaluate(data, truth, model):
         prediction = model.predict(data)
         pred_proba = model.predict_proba(data)
-        metrics_dict = pd.Series({
+        '''
+        metrics_df = pd.Series({
             'accuracy': round(metrics.accuracy_score(truth, prediction), 2),
             'precision': round(metrics.precision_score(truth, prediction, average='weighted'), 2),
             'recall': round(metrics.recall_score(truth, prediction, average='weighted'), 2),
             'f1 score': round(metrics.f1_score(truth, prediction, average='weighted'), 2),
             'roc auc': round(metrics.roc_auc_score(truth, pred_proba, multi_class='ovr'), 2)
         })
-        
+        '''
+
+        report = metrics.classification_report(truth, prediction, target_names=model.classes_)
         confusion_matrix = metrics.confusion_matrix(truth, prediction, labels=model.classes_)
-        return metrics_dict, confusion_matrix
+        return report, confusion_matrix
 
     def train(self):
         try:
@@ -51,12 +54,12 @@ class Engine:
             print(f"An error occurred during training: {e}")
         
         metrics, confusion = self._evaluate(X_test, y_test, self._model)
-        if self.config['PLOT_EVAL']:
-            self._plot_eval(confusion, labels=self._model.classes_)
+        if self.config['PLOT_CONFUSION']:
+            self._plot_confusion(confusion, labels=self._model.classes_)
         return metrics
     
     @staticmethod
-    def _plot_eval(confusion_matrix, labels):
+    def _plot_confusion(confusion_matrix, labels):
         disp = metrics.ConfusionMatrixDisplay(confusion_matrix, display_labels=labels)
         disp.plot()
         plt.title('Confusion Matrix')

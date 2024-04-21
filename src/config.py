@@ -4,5 +4,5 @@
     "MODEL": "DecisionClassifier",
     "TEST_SIZE": 0.2,
     "PARAMETERS": "None",
-    "PLOT_EVAL": "True"
+    "PLOT_CONFUSION": "True"
 }
