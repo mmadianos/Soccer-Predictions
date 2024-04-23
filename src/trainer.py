@@ -13,7 +13,7 @@ if __name__ == "__main__":
         config = json.load(file)
 
     engine = Engine(config)
-    m, mm = engine.train()
-    print(m,mm)
+    metrics = engine.train()
+    print(metrics)
    
 

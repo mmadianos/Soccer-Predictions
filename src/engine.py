@@ -1,31 +1,89 @@
 import importlib
 import pandas as pd
-from sklearn.model_selection import train_test_split
+import matplotlib.pyplot as plt
 from sklearn import metrics
-
+from preprocess import Preprocessor
+from sklearn.model_selection import KFold, StratifiedKFold, cross_validate, train_test_split
+from sklearn.pipeline import make_pipeline
 
 class Engine:
-    def __init__(self, config, model=None) -> None:
+    def __init__(self, config) -> None:
         self.config = config
         self.test_size = config['TEST_SIZE']
-        self.clf = self._get_model(config['MODEL'])()
+        self._model = self._get_model(config['MODEL'])()
+        self.preprocessor = Preprocessor()
 
     def _get_data(self):
         keep_col=['HomeTeam','AwayTeam', 'B365H', 'IWH', 'FTR']
         df = pd.read_csv(self.config['TRAINING_FILE'], usecols=keep_col)
         df = df.drop(columns=['HomeTeam','AwayTeam'])
-        return train_test_split(df.drop(columns='FTR'), df.FTR, test_size=self.test_size, random_state=42)
+        X, y = df.drop(columns='FTR'), df.FTR
+        return X, y
 
+    def preprocess(self, X, y):
+        return self.preprocessor.fit_transform(X=X, y=y)
+    
+    @property
+    def model(self):
+        return self._model
+    
     @staticmethod
     def _get_model(model_name):
-        model_package = f'models.scikit.{model_name.lower()}'
+        model_package = f'models.estimators.{model_name.lower()}'
         mod = importlib.import_module(model_package)
         return getattr(mod, model_name)
 
-    def train(self, random_state=42):
-        X_train, X_test, y_train, y_test = self._get_data()
-        self.clf.fit(X_train, y_train)
-        y_pred = self.clf.predict(X_test)
-        m = metrics.accuracy_score(y_test, y_pred)
-        mm = metrics.confusion_matrix(y_test, y_pred)
-        return m, mm
+    @staticmethod
+    def _evaluate(data, truth, model):
+        prediction = model.predict(data)
+        #pred_proba = model.predict_proba(data)
+        '''
+        metrics_df = pd.Series({
+            'accuracy': round(metrics.accuracy_score(truth, prediction), 2),
+            'precision': round(metrics.precision_score(truth, prediction, average='weighted'), 2),
+            'recall': round(metrics.recall_score(truth, prediction, average='weighted'), 2),
+            'f1 score': round(metrics.f1_score(truth, prediction, average='weighted'), 2),
+            'roc auc': round(metrics.roc_auc_score(truth, pred_proba, multi_class='ovr'), 2)
+        })
+        '''
+
+        report = metrics.classification_report(truth, prediction, target_names=model.classes_)
+        confusion_matrix = metrics.confusion_matrix(truth, prediction, labels=model.classes_)
+        return report, confusion_matrix
+
+    def train(self, cv=False):
+        X, y = self._get_data()
+        
+        pipeline = make_pipeline(self.preprocessor, self._model)
+
+        if cv:
+            strategy = self.config.get('CV_STRATEGY', 'StratifiedKFold')
+            assert strategy in ['StratifiedKFold', 'KFold'], f'Invalid CV strategy: {strategy}'
+
+            metrics = self._cross_validation(pipeline, X, y, strategy)
+        else: 
+            X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=self.test_size)
+            pipeline.fit(X_train.values, y_train)
+            metrics, confusion = self._evaluate(X_test.values, y_test, self._model)
+            if self.config['PLOT_CONFUSION']: self._plot_confusion(confusion, labels=self._model.classes_)
+
+        return metrics
+    
+    def _cross_validation(self, model, X, y, strategy, cv_splits=5):
+
+        scoring = ['precision_macro', 'recall_macro', 'f1_weighted']
+
+        if strategy == 'StratifiedKFold':
+            cv = StratifiedKFold(n_splits=cv_splits, shuffle=True, random_state=42)
+        elif strategy == 'KFold':
+            cv = KFold(n_splits=cv_splits, shuffle=True, random_state=42)
+        
+        return cross_validate(model, X, y, cv=cv, scoring=scoring)
+
+    @staticmethod
+    def _plot_confusion(confusion_matrix, labels):
+        disp = metrics.ConfusionMatrixDisplay(confusion_matrix, display_labels=labels)
+        disp.plot()
+        plt.title('Confusion Matrix')
+        plt.show()
+    
