@@ -4,5 +4,6 @@
     "MODEL": "DecisionClassifier",
     "TEST_SIZE": 0.2,
     "PARAMETERS": "None",
-    "PLOT_CONFUSION": "True"
+    "PLOT_CONFUSION": "True",
+    "CV_STRATEGY": "StratifiedKFold"
 }
