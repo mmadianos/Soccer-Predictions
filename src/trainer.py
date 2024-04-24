@@ -1,5 +1,5 @@
 import argparse
-import json
+from config import params
 from engine import Engine
 
 
@@ -9,10 +9,7 @@ if __name__ == "__main__":
     parser.add_argument('--config', type=str, help='Evaluation config file path')
     args = parser.parse_args()
 
-    with open(args.config, "r") as file:
-        config = json.load(file)
-
-    engine = Engine(config)
+    engine = Engine(params)
     metrics = engine.train()
     print(metrics)
    

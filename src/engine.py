@@ -2,16 +2,16 @@ import importlib
 import pandas as pd
 import matplotlib.pyplot as plt
 from sklearn import metrics
-from preprocess import Preprocessor
+from preprocess import PreprocessorPipeline
 from sklearn.model_selection import KFold, StratifiedKFold, cross_validate, train_test_split
-from sklearn.pipeline import make_pipeline
+from sklearn.pipeline import Pipeline
 
 class Engine:
     def __init__(self, config) -> None:
         self.config = config
         self.test_size = config['TEST_SIZE']
         self._model = self._get_model(config['MODEL'])()
-        self.preprocessor = Preprocessor()
+        self._preprocessor = None
 
     def _get_data(self):
         keep_col=['HomeTeam','AwayTeam', 'B365H', 'IWH', 'FTR']
@@ -19,9 +19,6 @@ class Engine:
         df = df.drop(columns=['HomeTeam','AwayTeam'])
         X, y = df.drop(columns='FTR'), df.FTR
         return X, y
-
-    def preprocess(self, X, y):
-        return self.preprocessor.fit_transform(X=X, y=y)
     
     @property
     def model(self):
@@ -51,11 +48,15 @@ class Engine:
         confusion_matrix = metrics.confusion_matrix(truth, prediction, labels=model.classes_)
         return report, confusion_matrix
 
-    def train(self, cv=False):
+    def train(self, cv=True):
         X, y = self._get_data()
-        
-        pipeline = make_pipeline(self.preprocessor, self._model)
+        scaler_type = self.config.get('SCALER_TYPE', None)
+        encoder_type = self.config.get('ENCODER_TYPE', None)
+        imputer_type = self.config.get('IMPUTER_TYPE', None)
 
+        self._preprocessor = PreprocessorPipeline(scaler_type, encoder_type, imputer_type)
+        pipeline = Pipeline([('Preprocessor', self._preprocessor), (self._model.name, self._model)])
+        
         if cv:
             strategy = self.config.get('CV_STRATEGY', 'StratifiedKFold')
             assert strategy in ['StratifiedKFold', 'KFold'], f'Invalid CV strategy: {strategy}'
@@ -63,8 +64,8 @@ class Engine:
             metrics = self._cross_validation(pipeline, X, y, strategy)
         else: 
             X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=self.test_size)
-            pipeline.fit(X_train.values, y_train)
-            metrics, confusion = self._evaluate(X_test.values, y_test, self._model)
+            pipeline.fit(X_train, y_train)
+            metrics, confusion = self._evaluate(X_test, y_test, self._model)
             if self.config['PLOT_CONFUSION']: self._plot_confusion(confusion, labels=self._model.classes_)
 
         return metrics
