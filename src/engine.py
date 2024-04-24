@@ -6,11 +6,12 @@ from preprocess import PreprocessorPipeline
 from sklearn.model_selection import KFold, StratifiedKFold, cross_validate, train_test_split
 from sklearn.pipeline import Pipeline
 
+
 class Engine:
-    def __init__(self, config) -> None:
+    def __init__(self, model, config) -> None:
         self.config = config
         self.test_size = config['TEST_SIZE']
-        self._model = self._get_model(config['MODEL'])()
+        self._model = model
         self._preprocessor = None
 
     def _get_data(self):
@@ -48,7 +49,7 @@ class Engine:
         confusion_matrix = metrics.confusion_matrix(truth, prediction, labels=model.classes_)
         return report, confusion_matrix
 
-    def train(self, cv=True):
+    def train(self, cv=False):
         X, y = self._get_data()
         scaler_type = self.config.get('SCALER_TYPE', None)
         encoder_type = self.config.get('ENCODER_TYPE', None)
@@ -60,8 +61,8 @@ class Engine:
         if cv:
             strategy = self.config.get('CV_STRATEGY', 'StratifiedKFold')
             assert strategy in ['StratifiedKFold', 'KFold'], f'Invalid CV strategy: {strategy}'
-
             metrics = self._cross_validation(pipeline, X, y, strategy)
+
         else: 
             X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=self.test_size)
             pipeline.fit(X_train, y_train)
@@ -71,7 +72,6 @@ class Engine:
         return metrics
     
     def _cross_validation(self, model, X, y, strategy, cv_splits=5):
-
         scoring = ['precision_macro', 'recall_macro', 'f1_weighted']
 
         if strategy == 'StratifiedKFold':

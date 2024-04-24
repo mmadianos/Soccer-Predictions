@@ -1,9 +1,9 @@
+from typing import Union
 from sklearn.preprocessing import StandardScaler, MinMaxScaler, RobustScaler, MaxAbsScaler, LabelEncoder, OneHotEncoder
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.pipeline import Pipeline
 from sklearn.compose import ColumnTransformer
 from sklearn.impute import SimpleImputer, KNNImputer
-from typing import Union
 
 #feature selection
 #calibration
@@ -16,8 +16,6 @@ class PreprocessorPipeline(TransformerMixin, BaseEstimator):
         self.encoder_type = encoder_type if isinstance(encoder_type, str) else None
         self.imputer_type = imputer_type if isinstance(imputer_type, str) else None
         self._processor = None
-        print('Initializing preprocessor with (scaler, encoder, imputer = '
-        f'{self.scaler_type, self.encoder_type, self.imputer_type}')
         
     def fit(self, X, y=None):
         numerical_cols = X.select_dtypes(include=['number']).columns

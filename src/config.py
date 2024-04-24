@@ -8,5 +8,11 @@ params = {
     'CV_STRATEGY': 'StratifiedKFold',
     'SCALER_TYPE': 'Standard',
     'ENCODER_TYPE': 'Label',
-    'IMPUTER_TYPE': None
+    'IMPUTER_TYPE': None,
+    'TUNE': True
+}
+
+scikit_params = {
+    'n_jobs': -1,
+    'random_state': 42
 }
