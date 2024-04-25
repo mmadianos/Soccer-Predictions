@@ -23,3 +23,9 @@ tuning_params = {
     'PLOT_RESULTS': False,
     'SAVE_BEST_PARAMS': False
 }
+
+
+eda_params = {
+    'TRAINING_FILE': '../vault/Championship.csv',
+    'TRAINING_FILE_NOTES': '../vault/notes.txt',
+}
