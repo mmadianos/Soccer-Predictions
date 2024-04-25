@@ -1,6 +1,7 @@
-torch
 numpy
 scikit-learn
 pandas
 lightgbm
 optuna
+matplolib
+plotly
