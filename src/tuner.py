@@ -1,4 +1,5 @@
 import optuna
+import joblib
 import numpy as np
 from engine import Engine
 from optuna.samplers import CmaEsSampler, RandomSampler, GridSampler, TPESampler
@@ -26,7 +27,7 @@ class Tuner:
         metrics = self._engine.train(cv=True)
         return np.mean(metrics['test_f1_weighted'])
 
-    def tune(self) -> optuna.study.Study:
+    def tune(self, save=False, plot_tuning_results=False) -> optuna.study.Study:
         """
         Perform hyperparameter tuning.
 
@@ -35,6 +36,11 @@ class Tuner:
         """
         study = optuna.create_study(study_name='optimization', direction='maximize')
         study.optimize(self.objective, n_trials=self.n_trials, show_progress_bar=True)
+
+        if save:
+            joblib.dump(study.best_params, f'../vault/tuned_params/{self._engine._model.name.replace(" ", "").lower()}.pkl')
+        if plot_tuning_results:
+            self.plot_results(study=study)
         return study
 
     def _suggest_params(self, trial: optuna.Trial) -> dict:
@@ -90,7 +96,7 @@ class Tuner:
         return samplers[sampler_type]
 
     @staticmethod
-    def plot_optimization_history(study: optuna.study.Study) -> None:
+    def plot_results(study: optuna.study.Study) -> None:
         """
         Plot optimization history.
 

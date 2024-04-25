@@ -13,7 +13,7 @@ class DecisionClassifier(BaseModel):
         }
     def __init__(self, **kwargs) -> None:
         super().__init__(name='Decision Tree Classifier')
-        self._model = DecisionTreeClassifier()   
+        self._model = DecisionTreeClassifier(**kwargs)   
 
     def fit(self, X, y) -> None:
         self._model.fit(X, y)
