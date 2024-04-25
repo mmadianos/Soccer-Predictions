@@ -8,6 +8,9 @@ from sklearn.pipeline import Pipeline
 
 
 class Engine:
+    """
+        
+    """
     def __init__(self, model, config) -> None:
         self.config = config
         self.test_size = config['TEST_SIZE']
@@ -15,6 +18,9 @@ class Engine:
         self._preprocessor = None
 
     def _get_data(self):
+        """
+        
+        """
         keep_col=['HomeTeam','AwayTeam', 'B365H', 'IWH', 'FTR']
         df = pd.read_csv(self.config['TRAINING_FILE'], usecols=keep_col)
         df = df.drop(columns=['HomeTeam','AwayTeam'])
@@ -27,6 +33,9 @@ class Engine:
     
     @staticmethod
     def _get_model(model_name):
+        """
+        
+        """
         model_package = f'models.estimators.{model_name.lower()}'
         mod = importlib.import_module(model_package)
         return getattr(mod, model_name)
@@ -50,6 +59,9 @@ class Engine:
         return report, confusion_matrix
 
     def train(self, cv=False):
+        """
+        
+        """
         X, y = self._get_data()
         scaler_type = self.config.get('SCALER_TYPE', None)
         encoder_type = self.config.get('ENCODER_TYPE', None)
@@ -72,6 +84,9 @@ class Engine:
         return metrics
     
     def _cross_validation(self, model, X, y, strategy, cv_splits=5):
+        """
+        
+        """
         scoring = ['precision_macro', 'recall_macro', 'f1_weighted']
 
         if strategy == 'StratifiedKFold':

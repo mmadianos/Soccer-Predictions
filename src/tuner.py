@@ -7,7 +7,10 @@ from optuna.samplers._base import BaseSampler
 from optuna.visualization import plot_optimization_history, plot_param_importances
 
 class Tuner:
-    def __init__(self, engine: Engine, n_trials: int=100, sampler_type: str='TPESampler') -> None:
+    def __init__(self, engine: Engine, 
+                 n_trials: int=100, 
+                 sampler_type: str='TPESampler') -> None:
+        
         self.n_trials = n_trials
         self.sampler_type = self._get_sampler(sampler_type)
         self._engine = engine
