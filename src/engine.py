@@ -5,12 +5,14 @@ from sklearn import metrics
 from preprocess import PreprocessorPipeline
 from sklearn.model_selection import KFold, StratifiedKFold, cross_validate, train_test_split
 from sklearn.pipeline import Pipeline
-
+from typing import Union, List, Tuple
+from sklearn.base import BaseEstimator
+from sklearn.ensemble import VotingClassifier
 
 class Engine:
-    def __init__(self, model, config) -> None:
+    def __init__(self, model:Union[BaseEstimator, List[Tuple[str, BaseEstimator]]], config) -> None:
         self.config = config
-        self.test_size = config['TEST_SIZE']
+        self.test_size = 0.2
         self._model = model
         self._preprocessor = None
 
@@ -24,12 +26,6 @@ class Engine:
     @property
     def model(self):
         return self._model
-    
-    @staticmethod
-    def _get_model(model_name):
-        model_package = f'models.estimators.{model_name.lower()}'
-        mod = importlib.import_module(model_package)
-        return getattr(mod, model_name)
 
     @staticmethod
     def _evaluate(data, truth, model):
@@ -48,7 +44,7 @@ class Engine:
         report = metrics.classification_report(truth, prediction, target_names=model.classes_)
         confusion_matrix = metrics.confusion_matrix(truth, prediction, labels=model.classes_)
         return report, confusion_matrix
-
+    
     def train(self, cv=False):
         X, y = self._get_data()
         scaler_type = self.config.get('SCALER_TYPE', None)
@@ -56,7 +52,11 @@ class Engine:
         imputer_type = self.config.get('IMPUTER_TYPE', None)
 
         self._preprocessor = PreprocessorPipeline(scaler_type, encoder_type, imputer_type)
-        pipeline = Pipeline([('Preprocessor', self._preprocessor), (self._model.name, self._model)])
+
+        if isinstance(self._model, VotingClassifier):
+            pipeline = Pipeline([('Preprocessor', self._preprocessor), ('Ensemble', self._model)])
+        else:
+            pipeline = Pipeline([('Preprocessor', self._preprocessor), (self._model.name, self._model)])
         
         if cv:
             strategy = self.config.get('CV_STRATEGY', 'StratifiedKFold')
@@ -70,7 +70,7 @@ class Engine:
             if self.config['PLOT_CONFUSION']: self._plot_confusion(confusion, labels=self._model.classes_)
 
         return metrics
-    
+
     def _cross_validation(self, model, X, y, strategy, cv_splits=5):
         scoring = ['precision_macro', 'recall_macro', 'f1_weighted']
 

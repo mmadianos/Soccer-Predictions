@@ -1,6 +1,6 @@
 params = {
     'TRAINING_FILE': '../vault/Championship.csv',
-    'PARAMS_PATH': '../vault/tuned_params/decisiontreeclassifier.pkl',
+    'PARAMS_PATH': '../vault/tuned_params/',
     'MODEL': 'DecisionClassifier',
     'TEST_SIZE': 0.2,
     'PARAMETERS': None,
@@ -22,4 +22,8 @@ tuning_params = {
     'TUNE': True,
     'PLOT_RESULTS': False,
     'SAVE_BEST_PARAMS': False
+}
+
+ensemble_params = {
+    'MODEL': ('DecisionClassifier', 'KNNClassifier'),
 }

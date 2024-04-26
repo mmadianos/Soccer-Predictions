@@ -1,16 +1,10 @@
 import argparse
-import joblib
-from config import params
+from config import params, ensemble_params
 from engine import Engine
 from tuner import Tuner
-import importlib
+from get_model import build_model
 
-
-def get_model(model_name, params_path):
-        model_params = joblib.load(params_path)
-        model_package = f'models.estimators.{model_name.lower()}'
-        mod = importlib.import_module(model_package)
-        return getattr(mod, model_name)(**model_params)
+import sys
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -18,7 +12,9 @@ if __name__ == "__main__":
     parser.add_argument('--config', type=str, help='Evaluation config file path')
     args = parser.parse_args()
 
-    model = get_model(params['MODEL'], params['PARAMS_PATH'])
+    params.update(ensemble_params)
+    model = build_model(params['MODEL'], params['PARAMS_PATH'])
+
     engine = Engine(model, params)
 
     if params.get('TUNE', False):
