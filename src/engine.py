@@ -10,10 +10,6 @@ from sklearn.ensemble import VotingClassifier
 
 class Engine:
     def __init__(self, model:Union[ClassifierMixin, List[Tuple[str, ClassifierMixin]]], config: dict) -> None:
-    """
-        
-    """
-    def __init__(self, model, config) -> None:
         self.config = config
         self._model = model
         self._preprocessor = None
