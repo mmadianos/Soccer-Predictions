@@ -9,15 +9,22 @@ from sklearn.impute import SimpleImputer, KNNImputer
 #calibration
 #sampling
 class PreprocessorPipeline(TransformerMixin, BaseEstimator):
+    """
+    
+    """
     def __init__(self, scaler_type: Union[str, None] = None, 
                 encoder_type: Union[str, None] = None,
                 imputer_type: Union[str, None] = None) -> None:
+        
         self.scaler_type = scaler_type if isinstance(scaler_type, str) else None
         self.encoder_type = encoder_type if isinstance(encoder_type, str) else None
         self.imputer_type = imputer_type if isinstance(imputer_type, str) else None
         self._processor = None
         
     def fit(self, X, y=None):
+        """
+        
+        """
         numerical_cols = X.select_dtypes(include=['number']).columns
         categorical_cols = X.select_dtypes(include=['object', 'category']).columns
 
@@ -48,6 +55,9 @@ class PreprocessorPipeline(TransformerMixin, BaseEstimator):
 
     @staticmethod
     def _get_scaler(scaler_type):
+        """
+        
+        """
         if scaler_type is None:
             return None
         
@@ -63,6 +73,9 @@ class PreprocessorPipeline(TransformerMixin, BaseEstimator):
     
     @staticmethod
     def _get_encoder(encoder_type):
+        """
+        
+        """
         if encoder_type is None:
             return None
         
@@ -76,6 +89,9 @@ class PreprocessorPipeline(TransformerMixin, BaseEstimator):
     
     @staticmethod
     def _get_imputer(imputer_type):
+        """
+        
+        """
         if imputer_type is None:
             return None
         

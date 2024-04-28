@@ -10,11 +10,18 @@ from sklearn.ensemble import VotingClassifier
 
 class Engine:
     def __init__(self, model:Union[ClassifierMixin, List[Tuple[str, ClassifierMixin]]], config: dict) -> None:
+    """
+        
+    """
+    def __init__(self, model, config) -> None:
         self.config = config
         self._model = model
         self._preprocessor = None
 
     def _get_data(self):
+        """
+        
+        """
         keep_col=['HomeTeam','AwayTeam', 'B365H', 'IWH', 'FTR']
         df = pd.read_csv(self.config['TRAINING_FILE'], usecols=keep_col)
         df = df.drop(columns=['HomeTeam','AwayTeam'])
@@ -42,8 +49,11 @@ class Engine:
         report = metrics.classification_report(truth, prediction, target_names=model.classes_)
         confusion_matrix = metrics.confusion_matrix(truth, prediction, labels=model.classes_)
         return report, confusion_matrix
-    
-    def train(self, cv: bool):
+
+    def train(self, cv=False):
+        """
+        
+        """
         X, y = self._get_data()
         scaler_type = self.config.get('SCALER_TYPE', None)
         encoder_type = self.config.get('ENCODER_TYPE', None)
