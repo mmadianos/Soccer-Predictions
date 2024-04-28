@@ -1,4 +1,3 @@
-#from config.config import params, tuning_params, ensemble_params, cv_params, holdout_params
 from .config import params, tuning_params, ensemble_params, cv_params, holdout_params
 
 
@@ -23,10 +22,3 @@ def get_config():
             print("Warning: Saving best parameters of ensemble model after tuning is not allowed. Setting 'SAVE_BEST_PARAMS' to False.")
 
     return config_file
-
-#CANT HAVE CALIBRATION + ENSEMBLE + TUNING!
-#CALIBRATION+ ENSEMBLE IS OK
-#ENSEMBLE + TUNING IS OK
-#CALIBRATION OK
-#CALIBRATION + TUNING NO
-#DONT SAVE IF ENSEMBLE IN TUNE!

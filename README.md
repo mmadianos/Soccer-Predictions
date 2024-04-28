@@ -5,5 +5,5 @@ How to run:
 
 ```
 cd .\src
-python.exe .\trainer.py --config .\config.py
+python.exe .\trainer.py
 ```
