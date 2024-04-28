@@ -1,4 +1,3 @@
-import importlib
 import pandas as pd
 import matplotlib.pyplot as plt
 from sklearn import metrics
@@ -56,7 +55,7 @@ class Engine:
         if isinstance(self._model, VotingClassifier):
             pipeline = Pipeline([('Preprocessor', self._preprocessor), ('Ensemble', self._model)])
         else:
-            pipeline = Pipeline([('Preprocessor', self._preprocessor), (self._model.name, self._model)])
+            pipeline = Pipeline([('Preprocessor', self._preprocessor), ('Classifier', self._model)])
         
         if cv:
             strategy = self.config.get('CV_STRATEGY', 'StratifiedKFold')

@@ -5,6 +5,8 @@ from engine import Engine
 from optuna.samplers import CmaEsSampler, RandomSampler, GridSampler, TPESampler
 from optuna.samplers._base import BaseSampler
 from optuna.visualization import plot_optimization_history, plot_param_importances
+from sklearn.ensemble import VotingClassifier
+
 
 class Tuner:
     def __init__(self, engine: Engine, n_trials: int=100, sampler_type: str='TPESampler') -> None:
@@ -22,8 +24,14 @@ class Tuner:
         Returns:
             float: The objective value.
         """
-        tune_params = self._suggest_params(trial)
-        self._engine._model._model.set_params(**tune_params)
+        if isinstance(self._engine._model, VotingClassifier):
+            print('yesssss')
+            tune_params = self._suggest_params_ensemble(trial)
+            self._engine._model.set_params(**tune_params)
+        else:
+            print('noooooo')
+            tune_params = self._suggest_params_single(trial, self._engine._model)
+            self._engine._model._model.set_params(**tune_params)
         metrics = self._engine.train(cv=True)
         return np.mean(metrics['test_f1_weighted'])
 
@@ -43,9 +51,9 @@ class Tuner:
             self.plot_results(study=study)
         return study
 
-    def _suggest_params(self, trial: optuna.Trial) -> dict:
+    def _suggest_params_single(self, trial: optuna.Trial, model) -> dict:
         """
-        Suggest hyperparameters for a trial.
+        Suggest tuning hyperparameters for a single model.
 
         Args:
             trial (optuna.Trial): The trial object.
@@ -54,7 +62,7 @@ class Tuner:
             dict: Dictionary containing suggested hyperparameters.
         """
         params = {}
-        hyperparams = self._engine._model.get_parameter_space()
+        hyperparams = model.get_parameter_space()
 
         for parameter, values in hyperparams.items():
             if isinstance(values, (list, tuple)):
@@ -73,7 +81,21 @@ class Tuner:
             else:
                 raise ValueError(f'Only list, or tuple of values are supported, got {repr(values)}')
         return params
+    
+    def _suggest_params_ensemble(self, trial) -> dict:
+        params_ensemble = {}
+        params_ensemble['voting'] = trial.suggest_categorical('voting', ['soft', 'hard'])
         
+        for name, estimator in self._engine._model.estimators:
+            print('LSITEN', estimator.get_params())
+            params = self._suggest_params_single(trial, estimator)
+            params = {name +'__'+ key: value for key, value in params.items()}
+            params_ensemble.update(params)
+        return params_ensemble
+        #hyperparams = self._engine._model.get_parameter_space()
+        
+        #self._engine._model
+
     @staticmethod
     def _get_sampler(sampler_type: str) -> BaseSampler:
         """

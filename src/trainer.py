@@ -1,8 +1,8 @@
 import argparse
-from config import params, ensemble_params
+from config.config import params, ensemble_params
 from engine import Engine
 from tuner import Tuner
-from get_model import build_model
+from models.get_model import build_model
 
 import sys
 
@@ -19,12 +19,12 @@ if __name__ == "__main__":
 
     if params.get('TUNE', False):
         tuner = Tuner(engine=engine, n_trials=10)
-        study = tuner.tune(save=True, plot_tuning_results=True)
+        study = tuner.tune(save=False, plot_tuning_results=True)
     
         importance = tuner.get_parameter_importances(study)
         print(study.best_params)
         print(f'{study.best_value:.3f}')
         print(importance)
     else:
-        metrics = engine.train(params.get('CV', True))
+        metrics = engine.train(True)
         print(metrics)
