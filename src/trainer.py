@@ -1,30 +1,32 @@
 import argparse
-from config.config import params, ensemble_params
 from engine import Engine
 from tuner import Tuner
 from models.get_model import build_model
+from config.get_config import get_config
 
-import sys
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     #parser.add_argument('--model', type=str)
-    parser.add_argument('--config', type=str, help='Evaluation config file path')
+    #parser.add_argument('--config', type=str, help='Config file path')
     args = parser.parse_args()
 
-    params.update(ensemble_params)
-    model = build_model(params['MODEL'], params['PARAMS_PATH'])
+    config = get_config()
+    model = build_model(config)
+    engine = Engine(model, config)
 
-    engine = Engine(model, params)
-
-    if params.get('TUNE', False):
-        tuner = Tuner(engine=engine, n_trials=10)
-        study = tuner.tune(save=False, plot_tuning_results=True)
+    if config.get('TUNE', False):
+        tuner = Tuner(engine=engine,
+                      n_trials=config['N_TRIALS'],
+                      sampler_type=config['SAMPLER_TYPE'])
+        
+        study = tuner.tune(save=config['SAVE_BEST_PARAMS'],
+                           plot_tuning_results=config['PLOT_RESULTS'])
     
-        importance = tuner.get_parameter_importances(study)
-        print(study.best_params)
-        print(f'{study.best_value:.3f}')
-        print(importance)
+        importance = tuner.get_parameter_importance(study)
+        print('BEST PARAMS:', study.best_params)
+        print(f'BEST METRIC: {study.best_value:.3f}')
+        print('IMPORTANCE WEIGHTS', importance)
     else:
-        metrics = engine.train(True)
-        print(metrics)
+        metrics = engine.train(config['CV'])
+        print('CV RESULT:', metrics)

@@ -5,13 +5,12 @@ from preprocess import PreprocessorPipeline
 from sklearn.model_selection import KFold, StratifiedKFold, cross_validate, train_test_split
 from sklearn.pipeline import Pipeline
 from typing import Union, List, Tuple
-from sklearn.base import BaseEstimator
+from sklearn.base import ClassifierMixin
 from sklearn.ensemble import VotingClassifier
 
 class Engine:
-    def __init__(self, model:Union[BaseEstimator, List[Tuple[str, BaseEstimator]]], config) -> None:
+    def __init__(self, model:Union[ClassifierMixin, List[Tuple[str, ClassifierMixin]]], config: dict) -> None:
         self.config = config
-        self.test_size = 0.2
         self._model = model
         self._preprocessor = None
 
@@ -44,7 +43,7 @@ class Engine:
         confusion_matrix = metrics.confusion_matrix(truth, prediction, labels=model.classes_)
         return report, confusion_matrix
     
-    def train(self, cv=False):
+    def train(self, cv: bool):
         X, y = self._get_data()
         scaler_type = self.config.get('SCALER_TYPE', None)
         encoder_type = self.config.get('ENCODER_TYPE', None)
@@ -60,23 +59,27 @@ class Engine:
         if cv:
             strategy = self.config.get('CV_STRATEGY', 'StratifiedKFold')
             assert strategy in ['StratifiedKFold', 'KFold'], f'Invalid CV strategy: {strategy}'
-            metrics = self._cross_validation(pipeline, X, y, strategy)
+            metrics = self._cross_validation(pipeline, X, y,
+                                             scoring = ['precision_macro', 'recall_macro', 'f1_weighted'],
+                                             cv_strategy = self.config['CV_STRATEGY'],
+                                             cv_splits = self.config['CV_SPLITS'])
 
         else: 
-            X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=self.test_size)
+            test_size = self.config['TEST_SIZE']
+            X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size)
             pipeline.fit(X_train, y_train)
             metrics, confusion = self._evaluate(X_test, y_test, self._model)
             if self.config['PLOT_CONFUSION']: self._plot_confusion(confusion, labels=self._model.classes_)
 
         return metrics
 
-    def _cross_validation(self, model, X, y, strategy, cv_splits=5):
-        scoring = ['precision_macro', 'recall_macro', 'f1_weighted']
-
-        if strategy == 'StratifiedKFold':
+    def _cross_validation(self, model, X, y, scoring, cv_strategy, cv_splits:int =5):        
+        if cv_strategy == 'StratifiedKFold':
             cv = StratifiedKFold(n_splits=cv_splits, shuffle=True, random_state=42)
-        elif strategy == 'KFold':
+        elif cv_strategy == 'KFold':
             cv = KFold(n_splits=cv_splits, shuffle=True, random_state=42)
+        else:
+            raise ValueError('Invalid CV_STRATEGY specified')
         
         return cross_validate(model, X, y, cv=cv, scoring=scoring)
 

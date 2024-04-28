@@ -25,17 +25,15 @@ class Tuner:
             float: The objective value.
         """
         if isinstance(self._engine._model, VotingClassifier):
-            print('yesssss')
             tune_params = self._suggest_params_ensemble(trial)
             self._engine._model.set_params(**tune_params)
         else:
-            print('noooooo')
             tune_params = self._suggest_params_single(trial, self._engine._model)
             self._engine._model._model.set_params(**tune_params)
         metrics = self._engine.train(cv=True)
         return np.mean(metrics['test_f1_weighted'])
 
-    def tune(self, save=False, plot_tuning_results=False) -> optuna.study.Study:
+    def tune(self, save: bool, plot_tuning_results: bool) -> optuna.study.Study:
         """
         Perform hyperparameter tuning.
 
@@ -131,7 +129,7 @@ class Tuner:
         fig.show(config={"staticPlot": True})
 
     @staticmethod
-    def get_parameter_importances(study: optuna.study.Study) -> dict:
+    def get_parameter_importance(study: optuna.study.Study) -> dict:
         """
         Compute parameter importances with FanovaImportanceEvaluator.
 

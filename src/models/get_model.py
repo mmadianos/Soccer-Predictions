@@ -1,24 +1,21 @@
 import importlib
 import joblib
-from typing import List, Tuple, Union, Sequence
-from sklearn.base import BaseEstimator
+from typing import List, Tuple, Union
+from sklearn.base import ClassifierMixin
 from sklearn.ensemble import VotingClassifier
-from sklearn.tree import DecisionTreeClassifier
-from sklearn.neighbors import KNeighborsClassifier
 from sklearn.calibration import CalibratedClassifierCV
 
 
-def create_ensemble(estimators: List[Tuple[str, BaseEstimator]],
+def create_ensemble(estimators: List[Tuple[str, ClassifierMixin]],
                     voting: str = 'soft',
                     weights: Union[None, List[float]] = None,
-                    verbose: bool = True,
-                    **kwargs) -> VotingClassifier:
+                    verbose: bool = True) -> VotingClassifier:
     """Create a voting ensemble classifier."""
     ensemble = VotingClassifier(estimators=estimators, voting=voting,
-                                weights=weights, verbose=verbose, **kwargs)
+                                weights=weights, verbose=verbose)
     return ensemble
 
-def load_model(model_name: str, params_path: str, calibrate_probabilities=False) -> BaseEstimator:
+def load_model(model_name: str, params_path: str, calibrate_probabilities: bool=False) -> ClassifierMixin:
     """Load a trained model from file."""
     try:
         model_params = joblib.load(params_path)
@@ -32,9 +29,10 @@ def load_model(model_name: str, params_path: str, calibrate_probabilities=False)
        model = CalibratedClassifierCV(model)
     return model
 
-def build_model(model_names: Union[str, Sequence[str]], 
-              params_paths: str) -> Union[BaseEstimator, VotingClassifier]:
+def build_model(config: dict) -> Union[ClassifierMixin, VotingClassifier]:
     """Get a single model or create an ensemble of models."""
+    model_names, params_paths = config['MODEL'], config['PARAMS_PATH']
+
     if isinstance(model_names, str):
         params_paths += model_names.lower()+'.pkl'
         model = load_model(model_names, params_paths)

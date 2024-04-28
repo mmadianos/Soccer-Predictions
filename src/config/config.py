@@ -3,14 +3,12 @@ params = {
     'TRAINING_FILE': '../vault/Championship.csv',
     'PARAMS_PATH': '../vault/tuned_params/',
     'MODEL': 'DecisionClassifier',
-    #'PARAMETERS': None,
     'SCALER_TYPE': 'Standard',
     'ENCODER_TYPE': 'Label',
     'IMPUTER_TYPE': None,
     'n_jobs': -1,
     'random_state': 42,
     'CALIBRATION': False,
-    'PLOT_CONFUSION': True, #delete
 }
 # ================= holdout ================= #
 holdout_params = {
@@ -21,17 +19,20 @@ holdout_params = {
 cv_params = {
     'CV': True,
     'CV_STRATEGY': 'StratifiedKFold',
+    'CV_SPLITS': 5,
     'PLOT_CONFUSION': False,
 }
 # ================= tuning ================= #
 tuning_params = {
-    'TUNE': True,
-    'PLOT_RESULTS': False,
-    'SAVE_BEST_PARAMS': True
+    'TUNE': False,
+    'N_TRIALS': 100,
+    'SAMPLER_TYPE': 'TPESampler',
+    'PLOT_RESULTS': True, #
+    'SAVE_BEST_PARAMS': True,
+    'CALIBRATION': False
 }
-
 # ================= model ensemble ================= #
 ensemble_params = {
-    #'MODEL': ('DecisionClassifier', 'KNNClassifier'),
-    'CALIBRATION': False
+    'MODEL': ('DecisionClassifier', 'KNNClassifier'),
+    'SAVE_BEST_PARAMS': False
 }
