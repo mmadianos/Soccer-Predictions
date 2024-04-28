@@ -1,37 +1,32 @@
 import argparse
-import joblib
-from config import params
 from engine import Engine
 from tuner import Tuner
-import importlib
+from models.get_model import build_model
+from config.get_config import get_config
 
-
-def get_model(model_name, params_path):
-        """
-        
-        """
-        model_params = joblib.load(params_path)
-        model_package = f'models.estimators.{model_name.lower()}'
-        mod = importlib.import_module(model_package)
-        return getattr(mod, model_name)(**model_params)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     #parser.add_argument('--model', type=str)
-    parser.add_argument('--config', type=str, help='Evaluation config file path')
+    #parser.add_argument('--config', type=str, help='Config file path')
     args = parser.parse_args()
 
-    model = get_model(params['MODEL'], params['PARAMS_PATH'])
-    engine = Engine(model, params)
+    config = get_config()
+    model = build_model(config)
+    engine = Engine(model, config)
 
-    if params.get('TUNE', False):
-        tuner = Tuner(engine=engine, n_trials=10)
-        study = tuner.tune(save=True, plot_tuning_results=True)
+    if config.get('TUNE', False):
+        tuner = Tuner(engine=engine,
+                      n_trials=config['N_TRIALS'],
+                      sampler_type=config['SAMPLER_TYPE'])
+        
+        study = tuner.tune(save=config['SAVE_BEST_PARAMS'],
+                           plot_tuning_results=config['PLOT_RESULTS'])
     
-        importance = tuner.get_parameter_importances(study)
-        print(study.best_params)
-        print(f'{study.best_value:.3f}')
-        print(importance)
+        importance = tuner.get_parameter_importance(study)
+        print('BEST PARAMS:', study.best_params)
+        print(f'BEST METRIC: {study.best_value:.3f}')
+        print('IMPORTANCE WEIGHTS', importance)
     else:
-        metrics = engine.train(params.get('CV', True))
-        print(metrics)
+        metrics = engine.train(config['CV'])
+        print('CV RESULT:', metrics)

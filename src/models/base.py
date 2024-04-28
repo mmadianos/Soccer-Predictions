@@ -1,17 +1,30 @@
 import numpy as np
 from abc import ABC, abstractmethod
-from sklearn.base import BaseEstimator
+from sklearn.base import BaseEstimator, ClassifierMixin
 from sklearn.exceptions import NotFittedError
+from sklearn.calibration import CalibratedClassifierCV
 
 
-class BaseModel(BaseEstimator, ABC):
-    def __init__(self, name: str) -> None:
+class BaseModel(ClassifierMixin, BaseEstimator, ABC):
+    def __init__(self, name: str, calibrate_probabilities: bool) -> None:
         self.name = name
+        self.calibrate_probabilities = calibrate_probabilities
         self._model = None
 
+    def fit(self, X, y):
+        self._model.fit(X, y)
+        return self
+
+    def _get_model(self) -> BaseEstimator:
+        estimator = self._get_estimator()
+        if self.calibrate_probabilities:
+            return CalibratedClassifierCV(estimator)
+        else:
+            return estimator
+    
     @abstractmethod
-    def fit(self, x, y) -> np.array:
-        raise NotImplementedError
+    def _get_estimator(self):
+        ...
 
     def predict(self, X: np.ndarray) -> np.ndarray:
         if self._model is None:
