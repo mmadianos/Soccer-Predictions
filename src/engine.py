@@ -7,21 +7,26 @@ from sklearn.pipeline import Pipeline
 from typing import Union, List, Tuple
 from sklearn.base import ClassifierMixin
 from sklearn.ensemble import VotingClassifier
+from feature_engineering.get_features import FeaturesEngine
+
 
 class Engine:
     def __init__(self, model:Union[ClassifierMixin, List[Tuple[str, ClassifierMixin]]], config: dict) -> None:
         self.config = config
         self._model = model
         self._preprocessor = None
+        self._feature_engine = FeaturesEngine()
 
     def _get_data(self):
         """
         
         """
-        keep_col=['HomeTeam','AwayTeam', 'B365H', 'IWH', 'FTR']
+        keep_col=['HomeTeam','AwayTeam', 'B365H', 'B365D', 'B365A', 'FTR', 'FTHG', 'FTAG']
         df = pd.read_csv(self.config['TRAINING_FILE'], usecols=keep_col)
+
+        df = self._feature_engine.generate_features(df)
         df = df.drop(columns=['HomeTeam','AwayTeam'])
-        X, y = df.drop(columns='FTR'), df.FTR
+        X, y = df.drop(columns=['FTR', 'FTHG', 'FTAG']), df.FTR
         return X, y
     
     @property
@@ -66,7 +71,7 @@ class Engine:
             strategy = self.config.get('CV_STRATEGY', 'StratifiedKFold')
             assert strategy in ['StratifiedKFold', 'KFold'], f'Invalid CV strategy: {strategy}'
             metrics = self._cross_validation(pipeline, X, y,
-                                             scoring = ['precision_macro', 'recall_macro', 'f1_weighted'],
+                                             scoring = ['precision_macro', 'accuracy', 'recall_macro', 'f1_weighted'],
                                              cv_strategy = self.config['CV_STRATEGY'],
                                              cv_splits = self.config['CV_SPLITS'])
 
@@ -76,7 +81,9 @@ class Engine:
             pipeline.fit(X_train, y_train)
             metrics, confusion = self._evaluate(X_test, y_test, self._model)
             if self.config['PLOT_CONFUSION']: self._plot_confusion(confusion, labels=self._model.classes_)
-
+        
+        #ff = pd.DataFrame(self._model.feature_importances_, index=X.columns, columns=["Importance"])
+        #print('hahahah', ff)
         return metrics
 
     def _cross_validation(self, model, X, y, scoring, cv_strategy, cv_splits:int =5):        

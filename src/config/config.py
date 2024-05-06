@@ -9,6 +9,9 @@ params = {
     'n_jobs': -1,
     'random_state': 42,
     'CALIBRATION': False,
+    'CV': True,
+    'ENSEMBLE': False,
+    'TUNE': True
 }
 # ================= holdout ================= #
 holdout_params = {
@@ -17,14 +20,12 @@ holdout_params = {
 }
 # ================= cross validation ================= #
 cv_params = {
-    'CV': True,
     'CV_STRATEGY': 'StratifiedKFold',
     'CV_SPLITS': 5,
     'PLOT_CONFUSION': False,
 }
 # ================= tuning ================= #
 tuning_params = {
-    'TUNE': False,
     'N_TRIALS': 100,
     'SAMPLER_TYPE': 'TPESampler',
     'PLOT_RESULTS': True, #

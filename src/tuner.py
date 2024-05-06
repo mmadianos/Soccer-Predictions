@@ -32,7 +32,7 @@ class Tuner:
             self._engine._model.set_params(**tune_params)
         else:
             tune_params = self._suggest_params_single(trial, self._engine._model)
-            self._engine._model._model.set_params(**tune_params)
+            self._engine._model.set_params(**tune_params)
         metrics = self._engine.train(cv=True)
         return np.mean(metrics['test_f1_weighted'])
 

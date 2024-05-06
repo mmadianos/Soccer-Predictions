@@ -4,15 +4,15 @@ from .config import params, tuning_params, ensemble_params, cv_params, holdout_p
 def get_config():
     config_file = params.copy()
     
-    if cv_params.get('CV', True):
+    if params.get('ENSEMBLE', False):
+        config_file.update(ensemble_params)
+
+    if params.get('CV', True):
         config_file.update(cv_params)
     else:
         config_file.update(holdout_params)
 
-    if ensemble_params.get('MODEL', None):
-        config_file.update(ensemble_params)
-
-    if tuning_params.get('TUNE', False):
+    if params.get('TUNE', False):
         config_file.update(tuning_params)
         if config_file['CALIBRATION']:
             config_file['CALIBRATION'] = False
