@@ -1,13 +1,14 @@
 import argparse
-from engine import Engine
-from tuner import Tuner
-from models.get_model import build_model
-from config.get_config import get_config
+from src import Engine, Tuner, build_model, get_config
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     #parser.add_argument('--model', type=str)
+    '''parser.add_argument('--ensemble', default=False, type=bool)
+    parser.add_argument('--cross_validate', default=True, type=bool)
+    parser.add_argument('--tune', default=False, type=bool)
+    parser.add_argument('--calibrate', default=False, type=bool)'''
     #parser.add_argument('--config', type=str, help='Config file path')
     args = parser.parse_args()
 

@@ -22,7 +22,7 @@ def load_model(model_name: str, params_path: str, calibrate_probabilities: bool=
     except FileNotFoundError:
         print(f"Model parameters file '{params_path}' not found. Using default parameters.")
         model_params = {}
-    model_package = f'models.estimators.{model_name.lower()}'
+    model_package = f'src.models.estimators.{model_name.lower()}'
     mod = importlib.import_module(model_package)
     model = getattr(mod, model_name)(**model_params)
     if calibrate_probabilities:

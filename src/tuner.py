@@ -1,7 +1,7 @@
 import optuna
 import joblib
 import numpy as np
-from engine import Engine
+from .engine import Engine
 from optuna.samplers import CmaEsSampler, RandomSampler, GridSampler, TPESampler
 from optuna.samplers._base import BaseSampler
 from optuna.visualization import plot_optimization_history, plot_param_importances

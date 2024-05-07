@@ -1,13 +1,13 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 from sklearn import metrics
-from preprocess import PreprocessorPipeline
+from .preprocess import PreprocessorPipeline
 from sklearn.model_selection import KFold, StratifiedKFold, cross_validate, train_test_split
 from sklearn.pipeline import Pipeline
 from typing import Union, List, Tuple
 from sklearn.base import ClassifierMixin
 from sklearn.ensemble import VotingClassifier
-from feature_engineering.get_features import FeaturesEngine
+from .feature_engineering.get_features import FeaturesEngine
 
 
 class Engine:

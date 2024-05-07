@@ -1,6 +1,6 @@
 # ================= general ================= #
 params = {
-    'TRAINING_FILE': '../vault/Championship.csv',
+    'TRAINING_FILE': 'vault/Championship.csv',
     'PARAMS_PATH': '../vault/tuned_params/',
     'MODEL': 'DecisionClassifier',
     'SCALER_TYPE': 'Standard',
@@ -11,7 +11,7 @@ params = {
     'CALIBRATION': False,
     'CV': True,
     'ENSEMBLE': False,
-    'TUNE': True
+    'TUNE': False
 }
 # ================= holdout ================= #
 holdout_params = {
