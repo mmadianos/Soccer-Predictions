@@ -11,7 +11,7 @@ class DecisionClassifier(DecisionTreeClassifier):
             'min_samples_split': [2, 20],
             'max_features': [0.1, 1.0]
         }
-    def __init__(self, name='DecisionClassifier', calibrate_probabilities: bool=False,
+    def __init__(self, name='DecisionClassifier',
                 *,
                 criterion="gini",
                 splitter="best",
@@ -38,7 +38,6 @@ class DecisionClassifier(DecisionTreeClassifier):
                 class_weight=class_weight,
                 ccp_alpha=ccp_alpha)
         self.name = name
-        self.calibrate_probabilities=calibrate_probabilities
     
     @classmethod
     def get_parameter_space(cls):

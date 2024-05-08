@@ -1,3 +1,4 @@
+import os
 import pandas as pd
 import matplotlib.pyplot as plt
 from sklearn import metrics
@@ -11,9 +12,8 @@ from .feature_engineering.get_features import FeaturesEngine
 
 
 class Engine:
-    def __init__(self, model:Union[ClassifierMixin, List[Tuple[str, ClassifierMixin]]], config: dict) -> None:
+    def __init__(self, config: dict) -> None:
         self.config = config
-        self._model = model
         self._preprocessor = None
         self._feature_engine = FeaturesEngine()
 
@@ -21,17 +21,16 @@ class Engine:
         """
         
         """
+        absolute_data_dir = os.path.dirname(os.path.abspath(__file__))
+        absolute_data_dir = os.path.join(absolute_data_dir, f'../vault/{self.config["TRAINING_FILE"]}')
+        
         keep_col=['HomeTeam','AwayTeam', 'B365H', 'B365D', 'B365A', 'FTR', 'FTHG', 'FTAG']
-        df = pd.read_csv(self.config['TRAINING_FILE'], usecols=keep_col)
+        df = pd.read_csv(absolute_data_dir, usecols=keep_col)
 
         df = self._feature_engine.generate_features(df)
         df = df.drop(columns=['HomeTeam','AwayTeam'])
         X, y = df.drop(columns=['FTR', 'FTHG', 'FTAG']), df.FTR
         return X, y
-    
-    @property
-    def model(self):
-        return self._model
 
     @staticmethod
     def _evaluate(data, truth, model):
@@ -51,7 +50,7 @@ class Engine:
         confusion_matrix = metrics.confusion_matrix(truth, prediction, labels=model.classes_)
         return report, confusion_matrix
 
-    def train(self, cv=False):
+    def train(self, model:Union[ClassifierMixin, List[Tuple[str, ClassifierMixin]]], cv=False):
         """
         
         """
@@ -62,16 +61,16 @@ class Engine:
 
         self._preprocessor = PreprocessorPipeline(scaler_type, encoder_type, imputer_type)
 
-        if isinstance(self._model, VotingClassifier):
-            pipeline = Pipeline([('Preprocessor', self._preprocessor), ('Ensemble', self._model)])
+        if isinstance(model, VotingClassifier):
+            pipeline = Pipeline([('Preprocessor', self._preprocessor), ('Ensemble', model)])
         else:
-            pipeline = Pipeline([('Preprocessor', self._preprocessor), ('Classifier', self._model)])
+            pipeline = Pipeline([('Preprocessor', self._preprocessor), ('Classifier', model)])
         
         if cv:
             strategy = self.config.get('CV_STRATEGY', 'StratifiedKFold')
             assert strategy in ['StratifiedKFold', 'KFold'], f'Invalid CV strategy: {strategy}'
             metrics = self._cross_validation(pipeline, X, y,
-                                             scoring = ['precision_macro', 'accuracy', 'recall_macro', 'f1_weighted'],
+                                             scoring = self.config['SCORING'],
                                              cv_strategy = self.config['CV_STRATEGY'],
                                              cv_splits = self.config['CV_SPLITS'])
 
@@ -79,14 +78,13 @@ class Engine:
             test_size = self.config['TEST_SIZE']
             X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size)
             pipeline.fit(X_train, y_train)
-            metrics, confusion = self._evaluate(X_test, y_test, self._model)
-            if self.config['PLOT_CONFUSION']: self._plot_confusion(confusion, labels=self._model.classes_)
+            metrics, confusion = self._evaluate(X_test, y_test, model)
+            if self.config['PLOT_CONFUSION']: self._plot_confusion(confusion, labels=model.classes_)
         
         #ff = pd.DataFrame(self._model.feature_importances_, index=X.columns, columns=["Importance"])
-        #print('hahahah', ff)
         return metrics
 
-    def _cross_validation(self, model, X, y, scoring, cv_strategy, cv_splits:int =5):        
+    def _cross_validation(self, model, X, y, scoring, cv_strategy, cv_splits:int=5):        
         if cv_strategy == 'StratifiedKFold':
             cv = StratifiedKFold(n_splits=cv_splits, shuffle=True, random_state=42)
         elif cv_strategy == 'KFold':
