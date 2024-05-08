@@ -1,21 +1,28 @@
 import optuna
 import joblib
 import numpy as np
-from engine import Engine
+from .engine import Engine
 from optuna.samplers import CmaEsSampler, RandomSampler, GridSampler, TPESampler
 from optuna.samplers._base import BaseSampler
 from optuna.visualization import plot_optimization_history, plot_param_importances
 from sklearn.ensemble import VotingClassifier
-
+from typing import Union
+from sklearn.base import ClassifierMixin
+from sklearn.ensemble import VotingClassifier
 
 class Tuner:
-    def __init__(self, engine: Engine, 
-                 n_trials: int=100, 
+    def __init__(self,
+                 engine: Engine,
+                 model: Union[ClassifierMixin, VotingClassifier],
+                 n_trials: int=100,
+                 metric: str='test_roc_auc_ovr',
                  sampler_type: str='TPESampler') -> None:
         
         self.n_trials = n_trials
+        self.metric = metric
         self.sampler_type = self._get_sampler(sampler_type)
         self._engine = engine
+        self._model = model
 
     def objective(self, trial: optuna.Trial):
         """
@@ -27,14 +34,14 @@ class Tuner:
         Returns:
             float: The objective value.
         """
-        if isinstance(self._engine._model, VotingClassifier):
+        if isinstance(self._model, VotingClassifier):
             tune_params = self._suggest_params_ensemble(trial)
-            self._engine._model.set_params(**tune_params)
+            self._model.set_params(**tune_params)
         else:
-            tune_params = self._suggest_params_single(trial, self._engine._model)
-            self._engine._model._model.set_params(**tune_params)
-        metrics = self._engine.train(cv=True)
-        return np.mean(metrics['test_f1_weighted'])
+            tune_params = self._suggest_params_single(trial, self._model)
+            self._model.set_params(**tune_params)
+        metrics = self._engine.train(model=self._model, cv=True)
+        return np.mean(metrics[self.metric])
 
     def tune(self, save: bool, plot_tuning_results: bool) -> optuna.study.Study:
         """
@@ -47,7 +54,7 @@ class Tuner:
         study.optimize(self.objective, n_trials=self.n_trials, show_progress_bar=True)
 
         if save:
-            joblib.dump(study.best_params, f'../vault/tuned_params/{self._engine._model.name.replace(" ", "").lower()}.pkl')
+            joblib.dump(study.best_params, f'vault/tuned_params/{self._model.name.replace(" ", "").lower()}.pkl')
         if plot_tuning_results:
             self.plot_results(study=study)
         return study
@@ -87,16 +94,12 @@ class Tuner:
         params_ensemble = {}
         params_ensemble['voting'] = trial.suggest_categorical('voting', ['soft', 'hard'])
         
-        for name, estimator in self._engine._model.estimators:
-            print('LSITEN', estimator.get_params())
+        for name, estimator in self._model.estimators:
             params = self._suggest_params_single(trial, estimator)
             params = {name +'__'+ key: value for key, value in params.items()}
             params_ensemble.update(params)
         return params_ensemble
-        #hyperparams = self._engine._model.get_parameter_space()
         
-        #self._engine._model
-
     @staticmethod
     def _get_sampler(sampler_type: str) -> BaseSampler:
         """
