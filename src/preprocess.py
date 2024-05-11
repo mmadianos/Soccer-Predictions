@@ -6,7 +6,6 @@ from sklearn.compose import ColumnTransformer
 from sklearn.impute import SimpleImputer, KNNImputer
 
 #feature selection
-#calibration
 #sampling
 class PreprocessorPipeline(TransformerMixin, BaseEstimator):
     """

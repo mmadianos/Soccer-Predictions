@@ -28,7 +28,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     #parser.add_argument('--model', type=str)
     parser.add_argument('--ensemble', default=False, type=bool)
-    parser.add_argument('--cross_validate', default=True, type=bool)
+    parser.add_argument('--cross_validate', default=False, type=bool)
     parser.add_argument('--tune', default=False, type=bool)
     parser.add_argument('--calibrate', default=False, type=bool)
     #parser.add_argument('--config', type=str, help='Config file path')

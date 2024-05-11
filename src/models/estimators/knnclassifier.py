@@ -4,12 +4,14 @@ from sklearn.neighbors import KNeighborsClassifier
     
 class KNNClassifier(KNeighborsClassifier):
     _parameter_space = {
-        'n_neighbors': [1, 10],
-        'weights': ['uniform', 'distance']
+            'n_neighbors': [1, 15],
+            'weights': ['uniform', 'distance'],
+            'metric' : ['minkowski', 'euclidean', 'manhattan']
         }
-    def __init__(self,name='KNNClassifier', calibrate_probabilities=False,
-                n_neighbors=5,
+    def __init__(self,
+                name='KNNClassifier',
                 *,
+                n_neighbors=5,
                 weights="uniform",
                 algorithm="auto",
                 leaf_size=30,
@@ -22,12 +24,7 @@ class KNNClassifier(KNeighborsClassifier):
                         p=p,
                         metric=metric)
         self.name=name
-        self.calibrate_probabilities=calibrate_probabilities
-        #self._model = self._get_model()
 
-    def _get_estimator(self, **kwargs):
-        return KNeighborsClassifier(**kwargs)
-    
     @classmethod
     def get_parameter_space(cls):
         return cls._parameter_space
