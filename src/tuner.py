@@ -81,11 +81,16 @@ class Tuner:
                 if isinstance(values[0], int):
                     params[parameter] = trial.suggest_int(parameter, values[0], values[-1])
                 elif isinstance(values[0], float):
-                    params[parameter] = trial.suggest_float(parameter, values[0], values[-1])
+                    log=False
+                    if values[-1]/values[0] > 100:
+                        log=True
+                    params[parameter] = trial.suggest_float(parameter, values[0], values[-1], log=log)
                 elif isinstance(values[0], str):
                     params[parameter] = trial.suggest_categorical(parameter, values)
+                elif isinstance(values[0], tuple):
+                    params[parameter] = trial.suggest_categorical(parameter, values)
                 else:
-                    raise ValueError(f'Only int, float, str are supported for hyperparameter tuning, got {values[0]}')
+                    raise ValueError(f'Only int, float, str, tuple are supported for hyperparameter tuning, got {values[0]}')
             else:
                 raise ValueError(f'Only list, or tuple of values are supported, got {repr(values)}')
         return params

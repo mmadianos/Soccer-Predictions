@@ -1,5 +1,6 @@
 import importlib
 import joblib
+import os
 from typing import List, Tuple, Union
 from sklearn.base import ClassifierMixin
 from sklearn.ensemble import VotingClassifier
@@ -20,7 +21,7 @@ def load_model(model_name: str, params_path: str, calibrate_probabilities: bool=
     try:
         model_params = joblib.load(params_path)
     except FileNotFoundError:
-        print(f"Model parameters file '{params_path}' not found. Using default parameters.")
+        print(f"Warning: Model parameters file '{params_path}' not found. Using default parameters...")
         model_params = {}
     model_package = f'src.models.estimators.{model_name.lower()}'
     mod = importlib.import_module(model_package)
@@ -31,15 +32,18 @@ def load_model(model_name: str, params_path: str, calibrate_probabilities: bool=
 
 def build_model(config: dict) -> Union[ClassifierMixin, VotingClassifier]:
     """Get a single model or create an ensemble of models."""
-    model_names, params_paths = config['MODEL'], config['PARAMS_PATH']
-
+    model_names = config['MODEL']
+    parameters_vault = os.path.dirname(os.path.abspath(__file__))
+    parameters_vault = os.path.join(parameters_vault, '../../vault/tuned_params/')
+    
     if isinstance(model_names, str):
-        params_paths += model_names.lower()+'.pkl'
-        model = load_model(model_names, params_paths)
+        parameters_vault = os.path.join(parameters_vault, model_names.lower()+'.pkl')
+        print('Loading model parameters...')
+        model = load_model(model_names, parameters_vault)
     else:
         print('Building ensemble model...')
-        estimators = [(model_name, load_model(model_name, param_path+model_name.lower()+'.pkl')) 
-                      for model_name, param_path in zip(model_names, params_paths)]
+        estimators = [(model_name, load_model(model_name, os.path.join(parameters_vault+model_name.lower()+'.pkl'))) 
+                      for model_name in model_names]
         print(estimators)
         model = create_ensemble(estimators)
     print('type', type(model))

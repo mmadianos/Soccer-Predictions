@@ -1,11 +1,13 @@
 # ================= general ================= #
 params = {
     'TRAINING_FILE': 'Championship.csv',
-    'PARAMS_PATH': '../vault/tuned_params/',
-    'MODEL': 'DecisionClassifier',
+    # 'MODEL': 'DecisionClassifier',
+    # 'MODEL': 'LightGBMClassifier',
+    'MODEL': 'KNNClassifier',
     'SCALER_TYPE': 'Standard',
     'ENCODER_TYPE': 'Label',
     'IMPUTER_TYPE': None,
+    'RESAMPLER_TYPE': 'SMOTE',
     'n_jobs': -1,
     'random_state': 42
 }
@@ -23,15 +25,15 @@ cv_params = {
 }
 # ================= tuning ================= #
 tuning_params = {
-    'N_TRIALS': 10,
+    'N_TRIALS': 30,
     'METRIC': 'test_roc_auc_ovr',
     'SAMPLER_TYPE': 'TPESampler',
-    'PLOT_RESULTS': True, #
+    'PLOT_RESULTS': True,
     'SAVE_BEST_PARAMS': True,
     'CALIBRATION': False
 }
 # ================= model ensemble ================= #
 ensemble_params = {
-    'MODEL': ('DecisionClassifier', 'KNNClassifier'),
+    'MODEL': ('DecisionClassifier', 'NNClassifier', 'SVClassifier'),
     'SAVE_BEST_PARAMS': False
 }
