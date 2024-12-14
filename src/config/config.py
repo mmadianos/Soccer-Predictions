@@ -1,12 +1,13 @@
 # ================= general ================= #
 params = {
     'TRAINING_FILE': 'Championship.csv',
-    #'MODEL': 'DecisionClassifier',
-    #'MODEL': 'LightGBMClassifier',
-    'MODEL': 'DecisionClassifier',
+    # 'MODEL': 'DecisionClassifier',
+    # 'MODEL': 'LightGBMClassifier',
+    'MODEL': 'KNNClassifier',
     'SCALER_TYPE': 'Standard',
     'ENCODER_TYPE': 'Label',
     'IMPUTER_TYPE': None,
+    'RESAMPLER_TYPE': 'SMOTE',
     'n_jobs': -1,
     'random_state': 42
 }
