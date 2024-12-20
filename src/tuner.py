@@ -1,5 +1,6 @@
 import optuna
 import joblib
+import ast
 import numpy as np
 from .engine import Engine
 from optuna.samplers import CmaEsSampler, RandomSampler, GridSampler, TPESampler
@@ -9,7 +10,6 @@ from optuna.pruners import MedianPruner
 from sklearn.ensemble import VotingClassifier
 from typing import Union
 from sklearn.base import ClassifierMixin
-from sklearn.ensemble import VotingClassifier
 
 
 class Tuner:
@@ -96,8 +96,15 @@ class Tuner:
                     params[parameter] = trial.suggest_categorical(
                         parameter, values)
                 elif isinstance(values[0], tuple):
-                    params[parameter] = trial.suggest_categorical(
-                        parameter, values)
+                    value_strings = [str(value) for value in values]
+                    chosen_value = trial.suggest_categorical(
+                        parameter, value_strings)
+
+                    # Convert the string back to a tuple
+
+                    params[parameter] = ast.literal_eval(chosen_value)
+                    # params[parameter] = trial.suggest_categorical(
+                    #    parameter, values)
                 else:
                     raise ValueError(
                         f'Only int, float, str, tuple are supported for hyperparameter tuning, got {values[0]}')

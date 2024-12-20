@@ -1,13 +1,14 @@
 from sklearn.neural_network import MLPClassifier
 
-    
+
 class NNClassifier(MLPClassifier):
     _parameter_space = {
-        'hidden_layer_sizes': [(100,), (50, 50), (25, 50, 25)],
+        'hidden_layer_sizes':
+        ((100,), (50, 50), (25, 50, 25), (10, 30, 30, 10)),
         'activation': ['relu', 'tanh'],
         'solver': ['adam', 'sgd'],
-        'alpha': [1e-4, 1e-1],
-        'learning_rate': ['constant', 'adaptive'],
+        'alpha': [1e-4, 1e-1, 1e-2, 1e-3],
+        'learning_rate': ['constant', 'adaptive', 'invscaling'],
     }
 
     def __init__(self,

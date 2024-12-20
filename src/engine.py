@@ -47,7 +47,9 @@ class Engine:
         '''
 
         report = metrics.classification_report(
-            truth, prediction, target_names=model.classes_)
+            truth, prediction,
+            target_names=model.classes_,
+            output_dict=True)
         confusion_matrix = metrics.confusion_matrix(
             truth, prediction, labels=model.classes_)
         return report, confusion_matrix
@@ -60,34 +62,20 @@ class Engine:
         """
         X, y = self._get_data()
 
-        '''
-        scaler_type = self.config.get('SCALER_TYPE', None)
-        encoder_type = self.config.get('ENCODER_TYPE', None)
-        imputer_type = self.config.get('IMPUTER_TYPE', None)
-
-        self._preprocessor = PreprocessorPipeline(
-            scaler_type, encoder_type, imputer_type)
-
-        self._resampler = self._get_resampler('SMOTE')
-        if isinstance(model, VotingClassifier):
-            pipeline = Pipeline(
-                [('Preprocessor', self._preprocessor), ('sampler', self._resampler), ('Ensemble', model)])
-        else:
-            pipeline = Pipeline(
-                [('Preprocessor', self._preprocessor), ('sampler', self._resampler), ('Classifier', model)])
-        '''
         pipeline = build_pipeline(self.config, model)
 
         if cv:
+            print('Performing cross-validation')
             strategy = self.config.get('CV_STRATEGY', 'StratifiedKFold')
             assert strategy in ['StratifiedKFold',
                                 'KFold'], f'Invalid CV strategy: {strategy}'
             metrics = self._cross_validation(pipeline, X, y,
                                              scoring=self.config['SCORING'],
-                                             cv_strategy=self.config['CV_STRATEGY'],
+                                             cv_strategy=strategy,
                                              cv_splits=self.config['CV_SPLITS'])
 
         else:
+            print('Performing train-test split')
             test_size = self.config['TEST_SIZE']
             X_train, X_test, y_train, y_test = train_test_split(
                 X, y, test_size=test_size)
