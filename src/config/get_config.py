@@ -1,7 +1,7 @@
 from .config import params, tuning_params, ensemble_params, cv_params, holdout_params
 
 
-def get_config(args):
+def get_config(args) -> dict:
     config_file = params.copy()
     config_file['CALIBRATION'] = args.calibrate
 
