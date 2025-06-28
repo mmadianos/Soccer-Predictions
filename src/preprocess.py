@@ -1,12 +1,9 @@
 from typing import Union
-from sklearn.preprocessing import StandardScaler, MinMaxScaler, RobustScaler, MaxAbsScaler, LabelEncoder, OneHotEncoder
+from sklearn.preprocessing import StandardScaler, MinMaxScaler, RobustScaler, MaxAbsScaler, OrdinalEncoder, OneHotEncoder, FunctionTransformer
 from sklearn.base import BaseEstimator, TransformerMixin
 from imblearn.pipeline import Pipeline
 from sklearn.compose import ColumnTransformer
 from sklearn.impute import SimpleImputer, KNNImputer
-
-# feature selection
-# sampling
 
 
 class PreprocessorPipeline(TransformerMixin, BaseEstimator):
@@ -34,23 +31,37 @@ class PreprocessorPipeline(TransformerMixin, BaseEstimator):
         categorical_cols = X.select_dtypes(
             include=['object', 'category']).columns
 
-        numerical_transformer = Pipeline(steps=[
-            ('imputer', self._get_imputer(self.imputer_type)),
-            ('scaler', self._get_scaler(self.scaler_type))
-        ])
+        # Build numerical pipeline
+        num_steps = []
+        imputer = self._get_imputer(self.imputer_type)
+        if imputer is not None:
+            num_steps.append(('imputer', imputer))
+        scaler = self._get_scaler(self.scaler_type)
+        if scaler is not None:
+            num_steps.append(('scaler', scaler))
+        if not num_steps:
+            num_steps = [('identity', FunctionTransformer(lambda x: x))]
 
-        categorical_transformer = Pipeline(steps=[
-            ('encoder', self._get_encoder(self.encoder_type)),
-            ('scaler', self._get_scaler(self.scaler_type))
-        ])
+        numerical_transformer = Pipeline(steps=num_steps)
+
+        # Build categorical pipeline
+        cat_steps = []
+        encoder = self._get_encoder(self.encoder_type)
+        if encoder is not None:
+            cat_steps.append(('encoder', encoder))
+        # Do not scale categorical features after encoding
+        if not cat_steps:
+            cat_steps = [('identity', FunctionTransformer(lambda x: x))]
+        categorical_transformer = Pipeline(steps=cat_steps)
 
         self._processor = ColumnTransformer(
             transformers=[
                 ('numerical_pipeline', numerical_transformer, numerical_cols),
                 ('categorical_pipeline', categorical_transformer, categorical_cols)
-            ])
+            ]
+        )
 
-        self._processor.fit(X)
+        self._processor.fit(X, y)
         return self
 
     def transform(self, X):
@@ -81,13 +92,13 @@ class PreprocessorPipeline(TransformerMixin, BaseEstimator):
     @staticmethod
     def _get_encoder(encoder_type):
         """
-
+        Return an encoder for categorical features.
         """
         if encoder_type is None:
             return None
 
         encoders = {
-            'Label': LabelEncoder(),
+            'Ordinal': OrdinalEncoder(),
             'Onehot': OneHotEncoder()
         }
         if encoder_type not in encoders:

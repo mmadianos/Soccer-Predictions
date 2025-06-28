@@ -1,11 +1,8 @@
-import os
-import pandas as pd
 import matplotlib.pyplot as plt
 from sklearn import metrics
 from sklearn.model_selection import KFold, StratifiedKFold, cross_validate, train_test_split
 from typing import Union, List, Tuple
 from sklearn.base import ClassifierMixin
-from .feature_engineering.get_features import FeaturesEngine
 from .build_pipeline import build_pipeline
 
 
@@ -13,102 +10,68 @@ class Engine:
     def __init__(self, config: dict) -> None:
         self.config = config
         self._preprocessor = None
-        self._feature_engine = FeaturesEngine()
-
-    def _get_data(self):
-        """
-
-        """
-        absolute_data_dir = os.path.dirname(os.path.abspath(__file__))
-        absolute_data_dir = os.path.join(
-            absolute_data_dir, f'../vault/{self.config["TRAINING_FILE"]}')
-
-        keep_col = ['HomeTeam', 'AwayTeam', 'B365H',
-                    'B365D', 'B365A', 'FTR', 'FTHG', 'FTAG']
-        df = pd.read_csv(absolute_data_dir, usecols=keep_col)
-
-        df = self._feature_engine.generate_features(df)
-        df = df.drop(columns=['HomeTeam', 'AwayTeam'])
-        X, y = df.drop(columns=['FTR', 'FTHG', 'FTAG']), df.FTR
-        return X, y
+        self.X_test = None
+        self.y_test = None
 
     @staticmethod
     def _evaluate(data, truth, model):
         prediction = model.predict(data)
         # pred_proba = model.predict_proba(data)
-        '''
-        metrics_df = pd.Series({
-            'accuracy': round(metrics.accuracy_score(truth, prediction), 2),
-            'precision': round(metrics.precision_score(truth, prediction, average='weighted'), 2),
-            'recall': round(metrics.recall_score(truth, prediction, average='weighted'), 2),
-            'f1 score': round(metrics.f1_score(truth, prediction, average='weighted'), 2),
-            'roc auc': round(metrics.roc_auc_score(truth, pred_proba, multi_class='ovr'), 2)
-        })
-        '''
-
         report = metrics.classification_report(
             truth, prediction, target_names=model.classes_)
         confusion_matrix = metrics.confusion_matrix(
             truth, prediction, labels=model.classes_)
         return report, confusion_matrix
 
-    def train(self,
-              model: Union[ClassifierMixin, List[Tuple[str, ClassifierMixin]]],
-              cv=False):
+    def train(self, X, y,
+              model: Union[ClassifierMixin, List[Tuple[str, ClassifierMixin]]]):
         """
-
+        Fit the model using a train/test split.
+        Returns the fitted pipeline.
         """
-        X, y = self._get_data()
-
-        '''
-        scaler_type = self.config.get('SCALER_TYPE', None)
-        encoder_type = self.config.get('ENCODER_TYPE', None)
-        imputer_type = self.config.get('IMPUTER_TYPE', None)
-
-        self._preprocessor = PreprocessorPipeline(
-            scaler_type, encoder_type, imputer_type)
-
-        self._resampler = self._get_resampler('SMOTE')
-        if isinstance(model, VotingClassifier):
-            pipeline = Pipeline(
-                [('Preprocessor', self._preprocessor), ('sampler', self._resampler), ('Ensemble', model)])
-        else:
-            pipeline = Pipeline(
-                [('Preprocessor', self._preprocessor), ('sampler', self._resampler), ('Classifier', model)])
-        '''
         pipeline = build_pipeline(self.config, model)
+        test_size = self.config['TEST_SIZE']
+        X_train, self.X_test, y_train, self.y_test = train_test_split(
+            X, y, test_size=test_size)
+        pipeline.fit(X_train, y_train)
+        return pipeline
 
-        if cv:
-            strategy = self.config.get('CV_STRATEGY', 'StratifiedKFold')
-            assert strategy in ['StratifiedKFold',
-                                'KFold'], f'Invalid CV strategy: {strategy}'
-            metrics = self._cross_validation(pipeline, X, y,
-                                             scoring=self.config['SCORING'],
-                                             cv_strategy=self.config['CV_STRATEGY'],
-                                             cv_splits=self.config['CV_SPLITS'])
+    def test(self, pipeline):
+        """
+        Evaluate the fitted pipeline on the stored test data.
+        Returns a dictionary of metrics.
+        """
+        report, confusion = self._evaluate(self.X_test, self.y_test, pipeline)
+        if self.config['PLOT_CONFUSION']:
+            self._plot_confusion(confusion, labels=pipeline.classes_)
+        return {
+            "classification_report": report,
+            "confusion_matrix": confusion
+        }
 
-        else:
-            test_size = self.config['TEST_SIZE']
-            X_train, X_test, y_train, y_test = train_test_split(
-                X, y, test_size=test_size)
-            pipeline.fit(X_train, y_train)
-            metrics, confusion = self._evaluate(X_test, y_test, model)
-            if self.config['PLOT_CONFUSION']:
-                self._plot_confusion(confusion, labels=model.classes_)
-
-        # ff = pd.DataFrame(self._model.feature_importances_, index=X.columns, columns=["Importance"])
-        return metrics
-
-    def _cross_validation(self, model, X, y, scoring, cv_strategy, cv_splits: int = 5):
-        if cv_strategy == 'StratifiedKFold':
-            cv = StratifiedKFold(n_splits=cv_splits,
-                                 shuffle=True, random_state=42)
-        elif cv_strategy == 'KFold':
-            cv = KFold(n_splits=cv_splits, shuffle=True, random_state=42)
+    def cross_validate(self, X, y,
+                       model: Union[ClassifierMixin, List[Tuple[str, ClassifierMixin]]]):
+        """
+        Perform cross-validation and return metrics.
+        """
+        random_state = 42
+        pipeline = build_pipeline(self.config, model)
+        strategy = self.config.get('CV_STRATEGY', 'StratifiedKFold')
+        if strategy == 'StratifiedKFold':
+            cv = StratifiedKFold(n_splits=self.config['CV_SPLITS'],
+                                 shuffle=True,
+                                 random_state=random_state)
+        elif strategy == 'KFold':
+            cv = KFold(
+                n_splits=self.config['CV_SPLITS'],
+                shuffle=True,
+                random_state=random_state)
         else:
             raise ValueError('Invalid CV_STRATEGY specified')
-
-        return cross_validate(model, X, y, cv=cv, scoring=scoring)
+        cv_results = cross_validate(
+            pipeline, X, y, cv=cv, scoring=self.config['SCORING']
+        )
+        return cv_results
 
     @staticmethod
     def _plot_confusion(confusion_matrix, labels):

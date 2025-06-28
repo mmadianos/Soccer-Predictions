@@ -1,30 +1,32 @@
 import optuna
 import joblib
 import numpy as np
-from .engine import Engine
+import os
 from optuna.samplers import CmaEsSampler, RandomSampler, GridSampler, TPESampler
 from optuna.samplers._base import BaseSampler
 from optuna.visualization import plot_optimization_history, plot_param_importances
 from sklearn.ensemble import VotingClassifier
 from typing import Union
 from sklearn.base import ClassifierMixin
-from sklearn.ensemble import VotingClassifier
+from functools import partial
+from .engine import Engine
+
 
 class Tuner:
     def __init__(self,
                  engine: Engine,
                  model: Union[ClassifierMixin, VotingClassifier],
-                 n_trials: int=100,
-                 metric: str='test_roc_auc_ovr',
-                 sampler_type: str='TPESampler') -> None:
-        
+                 n_trials: int = 100,
+                 metric: str = 'test_roc_auc_ovr',
+                 sampler_type: str = 'TPESampler') -> None:
+
         self.n_trials = n_trials
         self.metric = metric
         self.sampler_type = self._get_sampler(sampler_type)
         self._engine = engine
         self._model = model
 
-    def objective(self, trial: optuna.Trial):
+    def objective(self, X, y, trial: optuna.Trial) -> float:
         """
         Objective function for optimization.
 
@@ -40,21 +42,35 @@ class Tuner:
         else:
             tune_params = self._suggest_params_single(trial, self._model)
             self._model.set_params(**tune_params)
-        metrics = self._engine.train(model=self._model, cv=True)
-        return np.mean(metrics[self.metric])
+        metrics = self._engine.cross_validate(X, y, model=self._model)
+        value = metrics[self.metric]
+        if isinstance(value, (list, np.ndarray)):
+            return float(np.mean(value))
+        return float(value)
 
-    def tune(self, save: bool, plot_tuning_results: bool) -> optuna.study.Study:
+    def tune(self, X, y,
+             save: bool, plot_tuning_results: bool) -> optuna.study.Study:
         """
         Perform hyperparameter tuning.
 
         Returns:
             optuna.study.Study: The optuna study object.
         """
-        study = optuna.create_study(study_name='optimization', direction='maximize')
-        study.optimize(self.objective, n_trials=self.n_trials, show_progress_bar=True)
+        study = optuna.create_study(
+            study_name='optimization',
+            direction='maximize',
+            sampler=self.sampler_type
+        )
+        study.optimize(partial(self.objective, X, y),
+                       n_trials=self.n_trials, show_progress_bar=True)
 
         if save:
-            joblib.dump(study.best_params, f'vault/tuned_params/{self._model.name.replace(" ", "").lower()}.pkl')
+            save_dir = 'vault/tuned_params'
+            os.makedirs(save_dir, exist_ok=True)
+            joblib.dump(
+                study.best_params,
+                f'{save_dir}/{self._model.name.replace(" ", "").lower()}.pkl'
+            )
         if plot_tuning_results:
             self.plot_results(study=study)
         return study
@@ -76,35 +92,43 @@ class Tuner:
             if isinstance(values, (list, tuple)):
 
                 assert all(isinstance(e, type(values[0])) for e in values), \
-                f'All elements must be of same object'
+                    f'All elements must be of same object'
 
                 if isinstance(values[0], int):
-                    params[parameter] = trial.suggest_int(parameter, values[0], values[-1])
+                    params[parameter] = trial.suggest_int(
+                        parameter, values[0], values[-1])
                 elif isinstance(values[0], float):
-                    log=False
+                    log = False
                     if values[-1]/values[0] > 100:
-                        log=True
-                    params[parameter] = trial.suggest_float(parameter, values[0], values[-1], log=log)
+                        log = True
+                    params[parameter] = trial.suggest_float(
+                        parameter, values[0], values[-1], log=log)
                 elif isinstance(values[0], str):
-                    params[parameter] = trial.suggest_categorical(parameter, values)
+                    params[parameter] = trial.suggest_categorical(
+                        parameter, values)
                 elif isinstance(values[0], tuple):
-                    params[parameter] = trial.suggest_categorical(parameter, values)
+                    params[parameter] = trial.suggest_categorical(
+                        parameter, values)
                 else:
-                    raise ValueError(f'Only int, float, str, tuple are supported for hyperparameter tuning, got {values[0]}')
+                    raise ValueError(
+                        f'Only int, float, str, tuple are supported for hyperparameter tuning, got {values[0]}')
             else:
-                raise ValueError(f'Only list, or tuple of values are supported, got {repr(values)}')
+                raise ValueError(
+                    f'Only list, or tuple of values are supported, got {repr(values)}')
         return params
-    
+
     def _suggest_params_ensemble(self, trial) -> dict:
         params_ensemble = {}
-        params_ensemble['voting'] = trial.suggest_categorical('voting', ['soft', 'hard'])
-        
+        params_ensemble['voting'] = trial.suggest_categorical(
+            'voting', ['soft', 'hard'])
+
         for name, estimator in self._model.estimators:
             params = self._suggest_params_single(trial, estimator)
-            params = {name +'__'+ key: value for key, value in params.items()}
+            params = {name + '__' + key: value for key,
+                      value in params.items()}
             params_ensemble.update(params)
         return params_ensemble
-        
+
     @staticmethod
     def _get_sampler(sampler_type: str) -> BaseSampler:
         """
@@ -123,7 +147,8 @@ class Tuner:
             'TPESampler': TPESampler()
         }
         if sampler_type not in samplers:
-            raise ValueError(f"Scaler type must be one of {list(samplers.keys())}")
+            raise ValueError(
+                f"Sampler type must be one of {list(samplers.keys())}")
         return samplers[sampler_type]
 
     @staticmethod

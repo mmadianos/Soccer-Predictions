@@ -5,7 +5,7 @@ params = {
     # 'MODEL': 'LightGBMClassifier',
     'MODEL': 'KNNClassifier',
     'SCALER_TYPE': 'Standard',
-    'ENCODER_TYPE': 'Label',
+    'ENCODER_TYPE': 'Ordinal',
     'IMPUTER_TYPE': None,
     'RESAMPLER_TYPE': 'SMOTE',
     'n_jobs': -1,
