@@ -20,7 +20,8 @@ holdout_params = {
 cv_params = {
     'CV_STRATEGY': 'StratifiedKFold',
     'CV_SPLITS': 5,
-    'SCORING': ['precision_macro', 'accuracy', 'recall_macro', 'f1_weighted', 'roc_auc_ovr'],
+    'SCORING': ['precision_macro', 'accuracy', 'recall_macro',
+                'f1_weighted', 'roc_auc_ovr'],
     'PLOT_CONFUSION': False,
 }
 # ================= tuning ================= #

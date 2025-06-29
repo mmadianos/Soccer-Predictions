@@ -33,12 +33,11 @@ def main(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    # parser.add_argument('--model', type=str)
     parser.add_argument('--ensemble', action='store_true')
     parser.add_argument('--cross_validate', action='store_true')
     parser.add_argument('--tune', action='store_true')
     parser.add_argument('--calibrate', action='store_true')
-    # parser.add_argument('--config', type=str, help='Config file path')
+
     args = parser.parse_args()
     print(f"Arguments: {args}")
     if args.ensemble:

@@ -18,13 +18,15 @@ class Engine:
         prediction = model.predict(data)
         # pred_proba = model.predict_proba(data)
         report = metrics.classification_report(
-            truth, prediction, target_names=model.classes_)
+            truth, prediction, target_names=model.classes_, output_dict=True)
         confusion_matrix = metrics.confusion_matrix(
             truth, prediction, labels=model.classes_)
         return report, confusion_matrix
 
-    def train(self, X, y,
-              model: Union[ClassifierMixin, List[Tuple[str, ClassifierMixin]]]):
+    def train(self,
+              X, y,
+              model: Union[ClassifierMixin,
+                           List[Tuple[str, ClassifierMixin]]]):
         """
         Fit the model using a train/test split.
         Returns the fitted pipeline.
@@ -49,8 +51,10 @@ class Engine:
             "confusion_matrix": confusion
         }
 
-    def cross_validate(self, X, y,
-                       model: Union[ClassifierMixin, List[Tuple[str, ClassifierMixin]]]):
+    def cross_validate(self,
+                       X, y,
+                       model: Union[ClassifierMixin,
+                                    List[Tuple[str, ClassifierMixin]]]):
         """
         Perform cross-validation and return metrics.
         """

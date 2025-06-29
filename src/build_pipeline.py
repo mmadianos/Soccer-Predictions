@@ -1,23 +1,29 @@
 from imblearn.pipeline import Pipeline
-from .preprocess import PreprocessorPipeline
 from sklearn.ensemble import VotingClassifier
-from imblearn.over_sampling import SMOTE
-from imblearn.combine import SMOTEENN
-#from imblearn.under_sampling import ClusterCentroids
+from imblearn.over_sampling import SMOTE, ADASYN, RandomOverSampler
+from imblearn.combine import SMOTEENN, SMOTETomek
+from imblearn.under_sampling import RandomUnderSampler, TomekLinks, EditedNearestNeighbours, ClusterCentroids
+from .preprocess import PreprocessorPipeline
 
 
-def get_resampler(resampler_type):
+def _get_resampler(resampler_type):
     """
-
+    Returns the appropriate resampler object based on the resampler_type.
     """
     if resampler_type is None:
-        # or not self.config.get('RESAMPLER', False):
         print("No resampling applied. Using original data distribution.")
         return None
 
     resamplers = {
         'SMOTE': SMOTE(),
+        'ADASYN': ADASYN(),
+        'RandomOverSampler': RandomOverSampler(),
+        'RandomUnderSampler': RandomUnderSampler(),
+        'TomekLinks': TomekLinks(),
+        'EditedNearestNeighbours': EditedNearestNeighbours(),
+        'ClusterCentroids': ClusterCentroids(),
         'SMOTEENN': SMOTEENN(),
+        'SMOTETomek': SMOTETomek(),
     }
     if resampler_type not in resamplers:
         raise ValueError(f"Invalid resampler type: {resampler_type}. "
@@ -28,16 +34,15 @@ def get_resampler(resampler_type):
 
 def build_pipeline(config, model):
     """
-Builds a machine learning pipeline based on the configuration and model.
+    Builds a machine learning pipeline based on the configuration and model.
 
-Args:
-    config (dict): Configuration dictionary.
-    model (Union[ClassifierMixin, VotingClassifier]):
-                                    The classifier or ensemble to use.
+    Args:
+        config (dict): Configuration dictionary.
+        model (Union[ClassifierMixin, VotingClassifier]): The classifier or ensemble to use.
 
-Returns:
-    Pipeline: Configured pipeline.
-"""
+    Returns:
+        Pipeline: Configured pipeline.
+    """
     steps = []
     scaler_type = config.get('SCALER_TYPE', None)
     encoder_type = config.get('ENCODER_TYPE', None)
@@ -47,12 +52,18 @@ Returns:
     preprocessor = PreprocessorPipeline(
         scaler_type, encoder_type, imputer_type)
     steps.append(('Preprocessor', preprocessor))
-    resampler = get_resampler(resampler_type)
-    steps.append(('Resampler', resampler))
+
+    resampler = _get_resampler(resampler_type)
+
+    if resampler is not None:
+        steps.append(('Resampler', resampler))
 
     # Add the model
     if isinstance(model, VotingClassifier):
         steps.append(('Ensemble', model))
     else:
         steps.append(('Classifier', model))
+
+    # Remove any steps with None for compatibility with imblearn/sklearn
+    steps = [step for step in steps if step[1] is not None]
     return Pipeline(steps)
