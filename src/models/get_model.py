@@ -17,7 +17,8 @@ def create_ensemble(estimators: List[Tuple[str, ClassifierMixin]],
     return ensemble
 
 
-def load_model(model_name: str, params_path: str, calibrate_probabilities: bool = False) -> ClassifierMixin:
+def load_model(model_name: str, params_path: str,
+               calibrate_probabilities: bool = False) -> ClassifierMixin:
     """Load a trained model from file."""
     try:
         model_params = joblib.load(params_path)
@@ -43,7 +44,7 @@ def build_model(config: dict) -> Union[ClassifierMixin, VotingClassifier]:
     if isinstance(model_names, str):
         parameters_vault = os.path.join(
             parameters_vault, model_names.lower()+'.pkl')
-        print('Loading model parameters...')
+        print(f'{config["MODEL"]}: Loading model parameters...')
         model = load_model(model_names, parameters_vault)
     else:
         print('Building ensemble model...')
@@ -54,5 +55,4 @@ def build_model(config: dict) -> Union[ClassifierMixin, VotingClassifier]:
         ]
         print(estimators)
         model = create_ensemble(estimators)
-    print('type', type(model))
     return model

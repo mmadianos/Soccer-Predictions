@@ -26,12 +26,12 @@ cv_params = {
 }
 # ================= tuning ================= #
 tuning_params = {
-    'N_TRIALS': 30,
+    'N_TRIALS': 100,
     'METRIC': 'test_roc_auc_ovr',
     'SAMPLER_TYPE': 'TPESampler',
     'PLOT_RESULTS': True,
     'SAVE_BEST_PARAMS': True,
-    'CALIBRATION': False
+    'CALIBRATION': True
 }
 # ================= model ensemble ================= #
 ensemble_params = {

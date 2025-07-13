@@ -1,7 +1,7 @@
+import os
 import optuna
 import joblib
 import numpy as np
-import os
 from optuna.samplers import CmaEsSampler, RandomSampler, GridSampler, TPESampler
 from optuna.samplers._base import BaseSampler
 from optuna.visualization import plot_optimization_history, plot_param_importances
@@ -36,6 +36,7 @@ class Tuner:
         Returns:
             float: The objective value.
         """
+        
         if isinstance(self._model, VotingClassifier):
             tune_params = self._suggest_params_ensemble(trial)
             self._model.set_params(**tune_params)
@@ -49,20 +50,26 @@ class Tuner:
         return float(value)
 
     def tune(self, X, y,
-             save: bool, plot_tuning_results: bool) -> optuna.study.Study:
+             save: bool = False,
+             direction: str = 'maximize',
+             plot_tuning_results: bool = False,
+             seed: Union[int, bool] = None) -> optuna.study.Study:
         """
         Perform hyperparameter tuning.
 
         Returns:
             optuna.study.Study: The optuna study object.
         """
+        if seed:
+            np.random.seed(seed)
         study = optuna.create_study(
             study_name='optimization',
-            direction='maximize',
+            direction=direction,
             sampler=self.sampler_type
         )
+
         study.optimize(partial(self.objective, X, y),
-                       n_trials=self.n_trials, show_progress_bar=True)
+                       n_trials=self.n_trials, show_progress_bar=False)
 
         if save:
             save_dir = 'vault/tuned_params'

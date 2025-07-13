@@ -3,7 +3,7 @@ from sklearn.neighbors import KNeighborsClassifier
 
 class KNNClassifier(KNeighborsClassifier):
     _parameter_space = {
-        'n_neighbors': [1, 15],
+        'n_neighbors': [1, 30],
         'weights': ['uniform', 'distance'],
         'metric': ['minkowski', 'euclidean', 'manhattan']
     }

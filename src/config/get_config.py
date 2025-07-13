@@ -1,7 +1,7 @@
 from .config import params, tuning_params, ensemble_params, cv_params, holdout_params
 
 
-def get_config(args) -> dict:
+def get_config(args, custom) -> dict:
     config_file = params.copy()
     config_file['CALIBRATION'] = args.calibrate
 
@@ -17,9 +17,17 @@ def get_config(args) -> dict:
         config_file.update(tuning_params)
         if args.calibrate:
             config_file['CALIBRATION'] = False
-            print("Warning: Calibrated models cannot be used for tuning. Setting 'CALIBRATION' to False.")
+            print(
+                "Warning: Calibrated models cannot be used for tuning. Setting 'CALIBRATION' to False.")
             if config_file['SAVE_BEST_PARAMS']:
                 config_file['SAVE_BEST_PARAMS'] = False
                 print("Warning: Saving best parameters of ensemble model after tuning is not allowed. Setting 'SAVE_BEST_PARAMS' to False.")
 
+    if custom:
+        for key, value in custom.items():
+            if key in config_file:
+                config_file[key] = value
+            else:
+                print(
+                    f"Warning: {key} is not a valid configuration parameter. Skipping.")
     return config_file
