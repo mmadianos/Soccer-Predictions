@@ -3,9 +3,22 @@ from sklearn.svm import SVC
 
 class SVClassifier(SVC):
     _parameter_space = {
-        'C': [1e-1, 1e3],
-        'gamma': [1e-4, 1.],
-        'kernel': ['linear', 'poly', 'rbf', 'sigmoid']
+        'C': {
+            'type': 'float',
+            'low': 1e-1,
+            'high': 1e3,
+            'log': True
+        },
+        'gamma': {
+            'type': 'float',
+            'low': 1e-4,
+            'high': 1.0,
+            'log': True
+        },
+        'kernel': {
+            'type': 'categorical',
+            'choices': ['linear', 'poly', 'rbf', 'sigmoid']
+        }
     }
 
     def __init__(self,

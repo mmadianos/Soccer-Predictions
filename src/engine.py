@@ -1,8 +1,10 @@
-import matplotlib.pyplot as plt
-from sklearn import metrics
-from sklearn.model_selection import KFold, StratifiedKFold, cross_validate, train_test_split
 from typing import Union, List, Tuple
+import matplotlib.pyplot as plt
+from sklearn.model_selection import (
+    KFold, StratifiedKFold, cross_validate, train_test_split)
 from sklearn.base import ClassifierMixin
+from sklearn.metrics import (
+    confusion_matrix, classification_report, ConfusionMatrixDisplay)
 from .build_pipeline import build_pipeline
 
 
@@ -17,11 +19,12 @@ class Engine:
     def _evaluate(data, truth, model):
         prediction = model.predict(data)
         # pred_proba = model.predict_proba(data)
-        report = metrics.classification_report(
-            truth, prediction, target_names=model.classes_, output_dict=True)
-        confusion_matrix = metrics.confusion_matrix(
+        report = classification_report(
+            truth, prediction, target_names=model.classes_,
+            output_dict=True, zero_division=0)
+        matrix = confusion_matrix(
             truth, prediction, labels=model.classes_)
-        return report, confusion_matrix
+        return report, matrix
 
     def train(self,
               X, y,
@@ -54,11 +57,11 @@ class Engine:
     def cross_validate(self,
                        X, y,
                        model: Union[ClassifierMixin,
-                                    List[Tuple[str, ClassifierMixin]]]):
+                                    List[Tuple[str, ClassifierMixin]]],
+                       random_state: Union[int, None] = None):
         """
         Perform cross-validation and return metrics.
         """
-        random_state = 42
         pipeline = build_pipeline(self.config, model)
         strategy = self.config.get('CV_STRATEGY', 'StratifiedKFold')
         if strategy == 'StratifiedKFold':
@@ -78,9 +81,8 @@ class Engine:
         return cv_results
 
     @staticmethod
-    def _plot_confusion(confusion_matrix, labels):
-        disp = metrics.ConfusionMatrixDisplay(
-            confusion_matrix, display_labels=labels)
+    def _plot_confusion(conf_matrix, labels):
+        disp = ConfusionMatrixDisplay(conf_matrix, display_labels=labels)
         disp.plot()
         plt.title('Confusion Matrix')
         plt.show()

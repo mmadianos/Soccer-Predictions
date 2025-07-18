@@ -10,6 +10,7 @@ from typing import Union
 from sklearn.base import ClassifierMixin
 from functools import partial
 from .engine import Engine
+from optuna.pruners import MedianPruner, SuccessiveHalvingPruner, NopPruner
 
 
 class Tuner:
@@ -18,11 +19,13 @@ class Tuner:
                  model: Union[ClassifierMixin, VotingClassifier],
                  n_trials: int = 100,
                  metric: str = 'test_roc_auc_ovr',
-                 sampler_type: str = 'TPESampler') -> None:
+                 sampler_type: str = 'TPESampler',
+                 pruner_type: Union[str, None] = 'MedianPruner') -> None:
 
         self.n_trials = n_trials
         self.metric = metric
         self.sampler_type = self._get_sampler(sampler_type)
+        self._pruner = self._get_pruner(pruner_type)
         self._engine = engine
         self._model = model
 
@@ -36,7 +39,7 @@ class Tuner:
         Returns:
             float: The objective value.
         """
-        
+
         if isinstance(self._model, VotingClassifier):
             tune_params = self._suggest_params_ensemble(trial)
             self._model.set_params(**tune_params)
@@ -65,9 +68,9 @@ class Tuner:
         study = optuna.create_study(
             study_name='optimization',
             direction=direction,
-            sampler=self.sampler_type
+            sampler=self.sampler_type,
+            pruner=self._pruner
         )
-
         study.optimize(partial(self.objective, X, y),
                        n_trials=self.n_trials, show_progress_bar=False)
 
@@ -88,6 +91,7 @@ class Tuner:
 
         Args:
             trial (optuna.Trial): The trial object.
+            model: The model instance with get_parameter_space() method.
 
         Returns:
             dict: Dictionary containing suggested hyperparameters.
@@ -95,33 +99,26 @@ class Tuner:
         params = {}
         hyperparams = model.get_parameter_space()
 
-        for parameter, values in hyperparams.items():
-            if isinstance(values, (list, tuple)):
+        for parameter, param_info in hyperparams.items():
+            p_type = param_info.get('type')
 
-                assert all(isinstance(e, type(values[0])) for e in values), \
-                    f'All elements must be of same object'
-
-                if isinstance(values[0], int):
-                    params[parameter] = trial.suggest_int(
-                        parameter, values[0], values[-1])
-                elif isinstance(values[0], float):
-                    log = False
-                    if values[-1]/values[0] > 100:
-                        log = True
-                    params[parameter] = trial.suggest_float(
-                        parameter, values[0], values[-1], log=log)
-                elif isinstance(values[0], str):
-                    params[parameter] = trial.suggest_categorical(
-                        parameter, values)
-                elif isinstance(values[0], tuple):
-                    params[parameter] = trial.suggest_categorical(
-                        parameter, values)
-                else:
-                    raise ValueError(
-                        f'Only int, float, str, tuple are supported for hyperparameter tuning, got {values[0]}')
+            if p_type == 'int':
+                low = param_info['low']
+                high = param_info['high']
+                params[parameter] = trial.suggest_int(parameter, low, high)
+            elif p_type == 'float':
+                low = param_info['low']
+                high = param_info['high']
+                log = param_info.get('log', False)
+                params[parameter] = trial.suggest_float(
+                    parameter, low, high, log=log)
+            elif p_type == 'categorical':
+                choices = param_info['choices']
+                params[parameter] = trial.suggest_categorical(
+                    parameter, choices)
             else:
                 raise ValueError(
-                    f'Only list, or tuple of values are supported, got {repr(values)}')
+                    f"Unsupported hyperparameter type '{p_type}' for parameter '{parameter}'")
         return params
 
     def _suggest_params_ensemble(self, trial) -> dict:
@@ -157,6 +154,26 @@ class Tuner:
             raise ValueError(
                 f"Sampler type must be one of {list(samplers.keys())}")
         return samplers[sampler_type]
+
+    @staticmethod
+    def _get_pruner(
+            pruner_type: Union[str, None]) -> optuna.pruners.BasePruner:
+        """
+        Get the pruner object based on the pruner type.
+
+        Args:
+            pruner_type (str): The pruner type.
+
+        Returns:
+            optuna.pruners.BasePruner: The pruner object.
+        """
+        if pruner_type is None:
+            return NopPruner()
+        pruners = {
+            'MedianPruner': MedianPruner(),
+            'SuccessiveHalvingPruner': SuccessiveHalvingPruner()
+        }
+        return pruners.get(pruner_type, NopPruner())
 
     @staticmethod
     def plot_results(study: optuna.study.Study) -> None:

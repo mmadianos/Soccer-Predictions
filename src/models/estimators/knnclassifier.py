@@ -3,9 +3,19 @@ from sklearn.neighbors import KNeighborsClassifier
 
 class KNNClassifier(KNeighborsClassifier):
     _parameter_space = {
-        'n_neighbors': [1, 30],
-        'weights': ['uniform', 'distance'],
-        'metric': ['minkowski', 'euclidean', 'manhattan']
+        'n_neighbors': {
+            'type': 'int',
+            'low': 1,
+            'high': 30
+        },
+        'weights': {
+            'type': 'categorical',
+            'choices': ['uniform', 'distance']
+        },
+        'metric': {
+            'type': 'categorical',
+            'choices': ['minkowski', 'euclidean', 'manhattan']
+        }
     }
 
     def __init__(self,
