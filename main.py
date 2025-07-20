@@ -1,6 +1,16 @@
 import argparse
 from src import Engine, Tuner, build_model, get_config, get_data
 import pandas as pd
+import logging
+
+
+def setup_logger():
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s - %(levelname)s - %(message)s',
+        handlers=[logging.StreamHandler()]
+    )
+    return logging.getLogger(__name__)
 
 
 def main(args):
@@ -37,13 +47,10 @@ if __name__ == "__main__":
     parser.add_argument('--cross_validate', action='store_true')
     parser.add_argument('--tune', action='store_true')
     parser.add_argument('--calibrate', action='store_true')
-
     args = parser.parse_args()
-    print(f"Arguments: {args}")
-    if args.ensemble:
-        print("Using ensemble model")
-    else:
-        print("Using single model")
+
+    logger = setup_logger()
+    logger.info("Starting the main script with %s", vars(args))
     result = main(args)
     if isinstance(result, dict):
         print(pd.DataFrame([result]))

@@ -2,9 +2,11 @@ import os
 import optuna
 import joblib
 import numpy as np
-from optuna.samplers import CmaEsSampler, RandomSampler, GridSampler, TPESampler
+from optuna.samplers import (
+  CmaEsSampler, RandomSampler, GridSampler, TPESampler)
 from optuna.samplers._base import BaseSampler
-from optuna.visualization import plot_optimization_history, plot_param_importances
+from optuna.visualization import (
+  plot_optimization_history, plot_param_importances)
 from sklearn.ensemble import VotingClassifier
 from typing import Union
 from sklearn.base import ClassifierMixin

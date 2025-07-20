@@ -2,8 +2,11 @@ from imblearn.pipeline import Pipeline
 from sklearn.ensemble import VotingClassifier
 from imblearn.over_sampling import SMOTE, ADASYN, RandomOverSampler
 from imblearn.combine import SMOTEENN, SMOTETomek
-from imblearn.under_sampling import RandomUnderSampler, TomekLinks, EditedNearestNeighbours, ClusterCentroids
+from imblearn.under_sampling import (
+    RandomUnderSampler, TomekLinks, EditedNearestNeighbours, ClusterCentroids)
 from .preprocess import PreprocessorPipeline
+import logging
+logger = logging.getLogger(__name__)
 
 
 def _get_resampler(resampler_type):
@@ -11,7 +14,7 @@ def _get_resampler(resampler_type):
     Returns the appropriate resampler object based on the resampler_type.
     """
     if resampler_type is None:
-        print("No resampling applied. Using original data distribution.")
+        logger.info("No resampling applied. Using original data distribution.")
         return None
 
     resamplers = {
@@ -28,7 +31,7 @@ def _get_resampler(resampler_type):
     if resampler_type not in resamplers:
         raise ValueError(f"Invalid resampler type: {resampler_type}. "
                          f"Available options: {list(resamplers.keys())}")
-    print(f"Using {resampler_type} for resampling.")
+    logger.info("Using %s for resampling.", resampler_type)
     return resamplers[resampler_type]
 
 

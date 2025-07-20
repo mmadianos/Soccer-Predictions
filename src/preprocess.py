@@ -1,9 +1,13 @@
 from typing import Union
-from sklearn.preprocessing import StandardScaler, MinMaxScaler, RobustScaler, MaxAbsScaler, OrdinalEncoder, OneHotEncoder, FunctionTransformer
+from sklearn.preprocessing import (
+  StandardScaler, MinMaxScaler, RobustScaler, MaxAbsScaler,
+  OrdinalEncoder, OneHotEncoder, FunctionTransformer)
 from sklearn.base import BaseEstimator, TransformerMixin
-from imblearn.pipeline import Pipeline
 from sklearn.compose import ColumnTransformer
 from sklearn.impute import SimpleImputer, KNNImputer
+from imblearn.pipeline import Pipeline
+import logging
+logger = logging.getLogger(__name__)
 
 
 class PreprocessorPipeline(TransformerMixin, BaseEstimator):
@@ -22,6 +26,11 @@ class PreprocessorPipeline(TransformerMixin, BaseEstimator):
         self.imputer_type = imputer_type if isinstance(
             imputer_type, str) else None
         self._processor = None
+
+        logger.info(
+            "Preprocessor initialized with scaler=%s, encoder=%s, imputer=%s",
+            self.scaler_type, self.encoder_type, self.imputer_type
+        )
 
     def fit(self, X, y=None):
         """
