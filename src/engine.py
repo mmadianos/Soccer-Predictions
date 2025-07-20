@@ -4,7 +4,8 @@ from sklearn.model_selection import (
     KFold, StratifiedKFold, cross_validate, train_test_split)
 from sklearn.base import ClassifierMixin
 from sklearn.metrics import (
-    confusion_matrix, classification_report, ConfusionMatrixDisplay)
+    confusion_matrix, classification_report, ConfusionMatrixDisplay,
+    accuracy_score, recall_score, f1_score, roc_auc_score, make_scorer)
 from .build_pipeline import build_pipeline
 
 
@@ -14,6 +15,7 @@ class Engine:
         self._preprocessor = None
         self.X_test = None
         self.y_test = None
+        self.scorers = self._get_scorers()
 
     @staticmethod
     def _evaluate(data, truth, model):
@@ -75,8 +77,9 @@ class Engine:
                 random_state=random_state)
         else:
             raise ValueError('Invalid CV_STRATEGY specified')
+
         cv_results = cross_validate(
-            pipeline, X, y, cv=cv, scoring=self.config['SCORING']
+            pipeline, X, y, cv=cv, scoring=self.scorers,
         )
         return cv_results
 
@@ -86,3 +89,26 @@ class Engine:
         disp.plot()
         plt.title('Confusion Matrix')
         plt.show()
+
+    def _get_scorers(self):
+        """
+        Get the scoring metrics for cross-validation.
+        """
+        scorers = {
+            'accuracy': make_scorer(accuracy_score),
+            'recall_macro': make_scorer(recall_score, average='macro'),
+            'f1_weighted': make_scorer(f1_score, average='weighted'),
+            'f1_macro': make_scorer(f1_score, average='macro'),
+            'roc_auc_ovr': make_scorer(
+                roc_auc_score,
+                multi_class='ovr',
+                response_method='predict_proba'
+            )
+        }
+
+        scoring = self.config.get('SCORING', ['f1_weighted'])
+        if isinstance(scoring, str):
+            scoring = [scoring]
+
+        return {metric: scorers[metric]
+                for metric in scoring if metric in scorers}

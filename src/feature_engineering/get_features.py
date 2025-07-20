@@ -1,11 +1,13 @@
 import pandas as pd
 import logging
+
 logger = logging.getLogger(__name__)
 
 
 class FeaturesEngine:
     def __init__(self):
-        pass
+        self.league = None
+        self.leaderboard = None
 
     def generate_features(self, df):
         logger.info("Generating features from the dataset.")

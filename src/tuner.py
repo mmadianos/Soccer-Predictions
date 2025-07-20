@@ -3,16 +3,22 @@ import optuna
 import joblib
 import numpy as np
 from optuna.samplers import (
-  CmaEsSampler, RandomSampler, GridSampler, TPESampler)
+    CmaEsSampler, RandomSampler, GridSampler, TPESampler)
 from optuna.samplers._base import BaseSampler
 from optuna.visualization import (
-  plot_optimization_history, plot_param_importances)
+    plot_optimization_history, plot_param_importances)
 from sklearn.ensemble import VotingClassifier
 from typing import Union
 from sklearn.base import ClassifierMixin
 from functools import partial
 from .engine import Engine
 from optuna.pruners import MedianPruner, SuccessiveHalvingPruner, NopPruner
+import logging
+
+logger = logging.getLogger(__name__)
+optuna.logging.set_verbosity(optuna.logging.WARNING)
+optuna_logger = logging.getLogger("optuna")
+optuna_logger.setLevel(logging.WARNING)
 
 
 class Tuner:
@@ -41,6 +47,7 @@ class Tuner:
         Returns:
             float: The objective value.
         """
+        logger.debug("Starting trial %d", trial.number)
 
         if isinstance(self._model, VotingClassifier):
             tune_params = self._suggest_params_ensemble(trial)
@@ -48,8 +55,15 @@ class Tuner:
         else:
             tune_params = self._suggest_params_single(trial, self._model)
             self._model.set_params(**tune_params)
+        logger.debug("Trial %d params: %s", trial.number, trial.params)
         metrics = self._engine.cross_validate(X, y, model=self._model)
         value = metrics[self.metric]
+        logger.debug(
+            "Trial %d metric %s: %s",
+            trial.number,
+            self.metric,
+            value
+        )
         if isinstance(value, (list, np.ndarray)):
             return float(np.mean(value))
         return float(value)
@@ -65,6 +79,8 @@ class Tuner:
         Returns:
             optuna.study.Study: The optuna study object.
         """
+        logger.info(
+            "Starting hyperparameter tuning with %d trials", self.n_trials)
         if seed:
             np.random.seed(seed)
         study = optuna.create_study(
