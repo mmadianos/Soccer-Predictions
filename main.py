@@ -47,11 +47,11 @@ if __name__ == "__main__":
     parser.add_argument('--cross_validate', action='store_true')
     parser.add_argument('--tune', action='store_true')
     parser.add_argument('--calibrate', action='store_true')
-    args = parser.parse_args()
+    arg = parser.parse_args()
 
     logger = setup_logger()
-    logger.info("Starting the main script with %s", vars(args))
-    result = main(args)
+    logger.info("Starting the main script with %s", vars(arg))
+    result = main(arg)
     if isinstance(result, dict):
         print(pd.DataFrame([result]))
     else:

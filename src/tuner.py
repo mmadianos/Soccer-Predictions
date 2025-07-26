@@ -132,8 +132,12 @@ class Tuner:
                     parameter, low, high, log=log)
             elif p_type == 'categorical':
                 choices = param_info['choices']
-                params[parameter] = trial.suggest_categorical(
+                choice = trial.suggest_categorical(
                     parameter, choices)
+                if parameter == 'hidden_layer_sizes':
+                    params[parameter] = tuple(int(x) for x in choice.split('-'))
+                else:
+                    params[parameter] = choice
             else:
                 raise ValueError(
                     f"Unsupported hyperparameter type '{p_type}' for parameter '{parameter}'")

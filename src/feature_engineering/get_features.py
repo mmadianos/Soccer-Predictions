@@ -12,9 +12,13 @@ class FeaturesEngine:
     def generate_features(self, df):
         logger.info("Generating features from the dataset.")
         self.league = pd.DataFrame(
-            {'Points': 0, 'Goals_scored': 0, 'Goals_conceded': 0}, index=df['HomeTeam'].unique())
+            {'Points': 0, 'Goals_scored': 0, 'Goals_conceded': 0},
+            index=df['HomeTeam'].unique()
+        )
         self.leaderboard = pd.DataFrame(
-            {'Goals_scored': 0, 'Goals_conceded': 0}, index=df['HomeTeam'].unique())
+            {'Goals_scored': 0, 'Goals_conceded': 0},
+            index=df['HomeTeam'].unique()
+        )
 
         df['H_points'] = df['FTR'].map({'H': 3, 'D': 1, 'A': 0})
         df['A_points'] = df['FTR'].map({'A': 3, 'D': 1, 'H': 0})
